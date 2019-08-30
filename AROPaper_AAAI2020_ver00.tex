@@ -481,7 +481,7 @@ It is possible to find an estimate of the expected value by using the rule group
 	
 \end{algorithmic}
 
-As a benefit of this technique, we have derived a quantitative value of exploration without using hyperparameters, in contrast to traditional techniques for solving bandit problems such as $\epsilon$-greedy strategies or Q-learning. This fact makes this technique particularly suitable to online learning and artificial general intelligence problems where hyperparameter tuning is not possible or feasible.
+As a benefit of this technique, we have derived a quantitative value of exploration without using hyperparameters, in contrast to traditional techniques for solving bandit problems such as $\epsilon$-greedy strategies or Q-learning. This fact makes this technique particularly suitable to online learning and artificial general intelligence problems where hyperparameter tuning is not possible or feasible. Also of note is that $\frac{1}{p}$ exactly equals the average number of steps to goal over the lifetime of the agent. (MENTION POKER?) This means that ARO's explore-exploit solution has an intuitive description: explore if the alternative is worse than average.
 
 \subsection{Sequence Selection}
 
