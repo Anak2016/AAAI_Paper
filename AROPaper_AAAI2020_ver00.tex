@@ -379,15 +379,15 @@ The goal becomes to create an algorithm that can function well in
 both.  This research presents ARO, an initial step toward such an
 algorithm.
 
-\section{Ryan Environment}
+\section{Environment}
 
 We formally classify the environment for ARO. We define the environment by a tuple $(G, M, O, f)$. The machine $M$ is a finite state machine with state set $S$, alphabet $\alpha$, and transition function $T$ such that the goal state $G$ is in $S$ and there is a path from every state in $S$ to $G$. The observation set $O$ is the set of possible observations (different sensor values) where $G \in O$ denotes the observation of the goal state. The observation function $f: S \rightarrow O$ computes what is observed in any state where $f(s) = G$ if and only if $s = G$. 
 
 An agent in this environment is told $\alpha$, but is otherwise provided no information about the environment. At any time-step $t$ when the agent is in state $s_t$, the agent will be told $f(s_t)$. If $s_t$ is not a goal state, the agent must provide an action $a_t \in \alpha$. The agent will then transition to $s_{t+1} = T(s_t, a_t)$. If $s_t$ is a goal state, the agent will be moved to non-goal state $s_{t+1}$ at random. This will continue until an arbitrary but unknown number of goals are reached. The goal of the agent is to minimize the total number of time steps.
 
-In the Blind FSM environment, $O = \{\epsilon, G\}$ and $f(s) = \epsilon$ for non-goal states. In the OSFSM environment, $O = \{0, 1, G\}$, with $0$ and $1$ denoting whether the odd sensor is off or on, respectively, and $f(s)$ returns the parity of s (the state of the odd sensor) for non-goal states.
+In the Blind FSM environment, $O = \{\epsilon, G\}$ and $f(s) = \epsilon$ for non-goal states. In the OSFSM environment, $O = \{0, 1, G\}$, with $0$ and $1$ denoting whether the state is even or odd, respectively, and $f(s)$ returns the parity of s for non-goal states.
 
-\section{Ryan ARO Overview}
+\section{ARO Overview}
 
 %ARO can be described in three parts: a data structure to store episodic memories and to describe what is currently known about the position of the agent in the machine, a method to estimate the value of exploring vs exploiting based on the data gathered, and an algorithm to use the data structure and the explore-exploit heuristic to decide what action to perform.
 
@@ -481,6 +481,8 @@ It is possible to find an estimate of the expected value by using the rule group
 	
 \end{algorithmic}
 
+TODO: DIVIDE BY 0!
+
 As a benefit of this technique, we have derived a quantitative value of exploration without using hyperparameters, in contrast to traditional techniques for solving bandit problems such as $\epsilon$-greedy strategies or Q-learning. This fact makes this technique particularly suitable to online learning and artificial general intelligence problems where hyperparameter tuning is not possible or feasible. Also of note is that $\frac{1}{p}$ exactly equals the average number of steps to goal over the lifetime of the agent. (MENTION POKER?) This means that ARO's explore-exploit solution has an intuitive description: explore if the alternative is worse than average.
 
 \subsection{Sequence Selection}
@@ -518,180 +520,6 @@ Using these rules, we can now fully define the policy of ARO. We define the glob
 \end{algorithmic}
 
 %Often, it is necessary for the agent to look ahead more than one action. For example, if a rule group indicates to the agent that there is a $35\%$ chance that making an $a$ will lead to an odd state, it may be helpful to see what the chances are for reaching the goal by making an $a$ or $b$ from such an odd state. To allow for such operations, rules are stored in a tree-like data structure defined as follows: a node of the tree consists of an observation, a frequency, and a mapping from $\alpha$ to an array of nodes, where no pair of nodes in an array use the same observation. The root of this tree is an array of tree nodes.
-
-
-\section{ARO Overview}
-
-ARO was developed for the OSFSM environment defined above.  In ARO,
-the episodic memory consists of a sequence of episodes that each
-consist of the value of both sensors (odd sensor and goal sensor) and
-the action taken by the agent.  Here is an example shorthand
-representation of an episodic memory: 01a,01b,00b,01b,11a,00b
-
-In this example, each episode consists of three characters
-\begin{itemize}
-\item the value of the goal sensor
-\item the value of the odd-state sensor
-\item the action selected
-\end{itemize}
-
-
-Another foundational concept in ARO is a rule, a common paradigm that
-defines cause and effect.  Nominally a rule in ARO consists of:
-
-    sensors + action $\rightarrow$ resulting sensors : frequency
-
-Specifically, for ARO, the sensor value is the value of the odd-state
-sensor (1=odd; 0=even) and the action is selected from the FSM's
-alphabet. For example, a rule may look like this:
-
-\begin{center}
-    1a$\rightarrow$1 : 23
-\end{center}
-
-This is shorthand for ``The odd-state sensor was on and I selected
-action a.  As a result, the odd-state sensor was on.  This has
-occurred 23 times in the past.''  Note that the goal sensor, which is
-almost always zero, is omitted for brevity.
-
-The example rule above is what we will refer to as a \textit{1-deep rule}.  A
-rule in ARO can be extended to include multiple steps.  Consider this
-example of a \textit{2-deep rule}:
-
-\begin{center}
-   0b,1a $\rightarrow$ 1 : 7
-\end{center}
-
-Here the rule states that ``the odd sensor was off and the agent
-selected action b.  Then, the odd sensor was on and it selected
-action a.  As a result, the odd-state sensor turned on.  This has
-happened 7 times.''
-
-A rule can also be shortened to contain only the overall frequency
-with which a sensor has had a certain value.  For example, this 0-deep
-rule states the agent has seen an odd state 45 times.
-
-\begin{center}
-    1 : 45
-\end{center}
-
-For efficiency, ARO stores the rules in a tree with a limited depth.
-For example, say that the agent's current episodic memory ends with
-the following subsequence:
-
-\begin{center}
-    ...,00b,01a,01?
-\end{center}
-    
-The question mark indicates the episode is the present state and the
-agent has not yet selected an action.  Note that all three of the
-example rules given above would `match' the current situation.  ARO
-tracks the currently matching rules by selecting particular nodes in
-its tree (see Figure \ref{fig3}).
-
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=0.9\columnwidth]{RuleTree.png} % Reduce the figure size so that it is slightly narrower than the column. Don't use precise values for figure width.This setup will avoid overfull boxes. 
-  \caption{An example of ARO's rule tree}
-  \label{fig3}
-\end{figure}
-
-*** TODO: Figure 3 will need to be modified as follows:
-
-***    a) add the frequencies
-
-***    b) complete the tree to include all nodes at depths 0-2
-
-***    c) put all three sensor values in each node
-
-***    d) generate as a high quality image, preferably in PDF format
-
-
-Each time a node is added to current, its frequency is increased
-appropriately.  Some example frequencies are shown in figure 3.  Note
-that all three possible sensor readings (odd, even or goal) are
-grouped together.  (While there are actually four possible readings,
-the odd-state sensor is ignored by ARO when the goal sensor is on.)
-The sum of the frequency of occurrence of each node can be used to
-calculate the probably of that node occurring based upon the agent's
-experience.
-
-Using these probabilities, the agent can estimate the number of steps
-that will be required to reach the goal via each possible action.
-From these values, an expected value of the agent's current state can
-also be calculated (see Figure \ref{tab1}).
-
-%more vertical spacing for table
-\newcommand\T{\rule{0pt}{2.6ex}}
-\newcommand\B{\rule[-1.2ex]{0pt}{0pt}}
-
-%table specification
-\begin{table}[t]
-\caption{Calculating expected value}\smallskip
-\centering
-\resizebox{0.7\columnwidth}{!}{
-  \smallskip\begin{tabular}{c|c|c}
-       \textbf{action} $a$ \T & \textbf{probability} & \T \textbf{\shortstack{ \\ est. steps \\ to goal}} \B\\ \hline
-       odd \T& $\frac{2}{5}$ & 3.1 \B\\ \hline
-       even \T& $\frac{1}{5}$ & 2.4 \B\\ \hline
-       goal \T& $\frac{2}{5}$ & 1.0 \B\\ \hline
-       \shortstack{expected \\ value \\ \smallskip } \T& \shortstack{ \\ $\frac{2}{5}\cdot3.1$ \\ $+ \frac{1}{5}\cdot2.4$ \\ $ + \frac{2}{5}\cdot1.0$} \T& \shortstack{2.1 \\ \bigskip } \B\\ 
-  \end{tabular}
-}
-\label{tab1}
-\end{table}
-
-\section{ARO Explore vs. Exploit}
-
-   
-As with many learning situations, ARO faces a choice here of whether
-to exploit the knowledge it already has or explore new knowledge.  A
-traditional approach is an $\epsilon$-Greedy algorithm where each state
-has an associated value that indicates the probability that the agent
-will take a random action (explore) rather than take the action that
-will take it most efficiently to the goal given the agent's current
-knowledge (exploit).  The value of epsilon declines (at an exponential
-rate) each time the state is reached.
-
-An approach like $\epsilon$-Greedy can not be applied to OSFSM as it
-depends upon the agent for the same reason that traditional machine
-learning algorithms wile fail: state aliasing.  Furthermore, the rate
-of declines of epsilon must be tuned to each particular environment.
-Since, this research aims to create a \textit{general} articial
-episodic memory, environment-specific tuning is not desirable.
-
-More sophisticated explore-exploit approaches exist \cite{Kearns99,Brafman02}
-but they also suffer from a similar inapplicability.
-
-%Nuxoll says, I'm making an assumption above.  More reading is needed
-%to verify this claim.
-
-To overcome this, ARO estimates the scope of its environment based
-upon the overall likelihood $p$ of the agent reaching the goal on its
-next step regardless of the action taken.  The term scope in this
-context does not refer to the size of the FSM.  Certainly, the more
-states an FSM has the larger $p$ will \textit{tend} to be but this is
-not guaranteed.
-
-This value of $p$ can be estimated based upon the agent's experience
-to date and grows increasingly accurate as the agent gains
-experience.  Thus it does not need to be tuned a priori on a
-per-environment basis.
-
-Using p, the agent can estimate the number of steps it will take to
-reach the goal:
-
-\begin{center}
-     $$steps = \sum_{1..n} p \cdot n \cdot (1-p)^{n-1}  = \frac{1}{p}$$
-\end{center}
-
-
-To avoid a divide-by-zero error when calculating $\frac{1}{p}$, the
-agent behaves as if it has already found the goal once.  As ARO
-executes, the agent always chooses to explore when $\frac{1}{p}$ is
-less than the expected value of the current state.  Thus, the
-exploration is frequent at first but gradually declines as the agent
-approaches optimal behavior.
 
 
 \section{Results}
