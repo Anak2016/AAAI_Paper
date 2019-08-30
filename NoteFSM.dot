@@ -1,0 +1,29 @@
+/* This is the transition table for this FSM 
+        a   b
+     1  G   1
+     2  G   1
+     3  1   1
+
+*/
+
+digraph NoteFSM
+{
+
+
+
+    margin=0.1
+    node [shape=circle width=0.5]
+
+    one [label="1"]
+    two [label="2"]
+    three [label="3"]
+    goal [label="goal" peripheries=2]
+
+    one -> goal [label=" a "]
+    one -> one [label=" b "]
+    two -> goal [label=" a "]
+    two -> one [label=" b "]
+    three -> one [label=" a "]
+    three -> one [label=" b "]
+
+}

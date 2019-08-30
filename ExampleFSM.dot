@@ -1,0 +1,47 @@
+/* This is the transition table for this FSM 
+          a  b
+       1  2  1
+       2  1  G
+       3  2  3
+       4  4  5
+       5  6  5
+       6  4  G
+
+*/
+
+digraph ExampleFSM
+{
+    margin=0.1
+    node [shape=circle width=0.5]
+
+    one [label="1"]
+    two [label="2"]
+    three [label="3"]
+    four [label="4"]
+    five [label="5"]
+    six [label="6"]
+    goal [label="goal" peripheries=2]
+
+    one -> two [label=" a "]
+    one -> one [label=" b "]
+    two -> one [label=" a "]
+    two -> goal [label=" b "]
+    three -> two [label=" a "]
+    three -> three [label=" b "]
+    four -> four [label=" a "]
+    four -> five [label=" b "]
+    five -> six [label=" a "]
+    five -> five [label=" b "]
+    six -> four [label=" a "]
+    six -> goal [label=" b "]
+
+/* These invisible transitions help align the graph in a more pleasant
+    way.  To see them, temporarily change their color from white to
+    something else
+    
+*/
+
+    one -> five [color=white]
+    three -> five [color=white]
+
+}
