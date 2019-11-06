@@ -263,11 +263,11 @@ algorithm.
 
 \section{Environment}
 
-We formally classify the environment for ARO. We define the environment by a tuple $(G, M, O, f)$. The machine $M$ is a finite state machine with state set $S$, alphabet $\alpha$, and transition function $T$ such that the goal state $G$ is in $S$ and there is a path from every state in $S$ to $G$. The observation set $O$ is the set of possible observations (different sensor values) where $G \in O$ denotes the observation of the goal state. The observation function $f: S \rightarrow O$ computes what is observed in any state where $f(s) = G$ if and only if $s = G$. 
+We will now formally classify the environment for ARO. We define the environment by a tuple $(M, G, O, f)$. The machine $M$ is a finite state machine with state set $S$, alphabet $\alpha$, and transition function $T$ such that the goal state $G$ is in $S$ and there is a path from every state in $S$ to $G$. The observation set $O$ is the set of possible observations (different sensor values) where $G \in O$ denotes the observation of reaching the goal state. The observation function $f: S \rightarrow O$ computes what is observed in any state where $f(s) = G$ if and only if $s = G$. 
 
 An agent in this environment is told $\alpha$, but is otherwise provided no information about the environment. The agent is initialized in some unknown random state $s_0$. At any time-step $t$ when the agent is in state $s_t$, the agent will be told $f(s_t)$. If $s_t$ is not a goal state, the agent must provide an action $a_t \in \alpha$. The agent will then transition to $s_{t+1} = T(s_t, a_t)$. If instead $s_t$ is a goal state, the agent will be moved to non-goal state $s_{t+1}$ at random. This will continue until an fixed but unknown number of goals are reached. The objective of the agent is to minimize the total number of time steps.
 
-In the Blind FSM environment, $O = \{\epsilon, G\}$ and $f(s) = \epsilon$ for non-goal states. In the OSFSM environment, $O = \{0, 1, G\}$, with $0$ and $1$ denoting whether the state is even or odd, respectively, and $f(s)$ returns the parity of s for non-goal states.
+In the Blind FSM environment, $O = \{\epsilon, G\}$ and $f(s) = \epsilon$ for non-goal states. In the OSFSM environment, $O = \{0, 1, G\}$, with $0$ and $1$ denoting whether the state is even or odd, respectively, and $f(s)$ returns the parity of $s$ for non-goal states.
 
 \section{ARO Overview}
 
@@ -275,15 +275,17 @@ In the Blind FSM environment, $O = \{\epsilon, G\}$ and $f(s) = \epsilon$ for no
 
 \subsection{Data Structures}
 
-We begin with data structures used for ARO. The agent stores previous events in units called ``episodes." Each episode consists of the tuple $(o, a)$, where $o$ is the observation $f(s)$, and $a$ is the action taken after the observation. In the OSFSM environment, an example episode may be $(1,b)$. When the agent reaches the goal, no action is performed, so we denote such an episode simply with ``G." In non-goal episodes, we concatenate the tuple for brevity, so the above episode would be denoted ``1b". In this episode, the agent was in an odd state and took action $b$.
+We begin with data structures used for ARO. The agent stores previous events in units called ``episodes." Each episode consists of the tuple $(o, a)$, where $o$ is the observation $f(s)$, and $a$ is the action taken after the observation if such an action exists. In the OSFSM environment, an example episode may be $(1,b)$. When the agent reaches the goal, no action is performed, so we denote such an episode simply with ``G." In non-goal episodes, we concatenate the tuple for brevity, so the above episode would be denoted ``1b". In this episode, the agent was in an odd state and took action $b$.
 
 Using these episodic memories, the agent records patterns of cause and effect in a structure called a ``rule." Rules are denoted like this example: $$1a \rightarrow 1: 23\%.$$ This rule states that being in an odd state and taking action $a$ ``caused" an odd state $23\%$ of the time. The effect part of a rule is always in this same style, but causes may be more complex. For example, consider this rule: $$0b,1a \rightarrow 1: 6\%.$$ 
 %This rules says that the agent taking action $a$ while being in an odd state that was reached by taking a $b$ from an even state has caused an odd state $6\%$ of the time. In general, a rule consists of a sequence of episodes as the ``cause", an observation $o \in O$ as an ``effect," and the probability that the cause produces the stated effect. 
 This rule states that being in an even state and performing action $b$, then reaching an odd state and performing action $a$ has caused the agent to reach an odd state $6\%$ of the time.
 
-More formally, a rule consists of a sequence of episodes of any length known as the cause sequence, an observation known as the effect, and a probability. The cause sequence of a rule may be empty, which can be interpreted as the probability  that transitioning to a new state causes a particular observation. The number of episodes in the cause sequence of a rule is called the ``depth" of a rule.
+More formally, a rule consists of three parts: a sequence of episodes of any length known as the \emph{cause sequence}, an observation known as the \emph{effect}, and a probability. The cause sequence of a rule may be empty, which can be interpreted as the probability  that transitioning to a new state causes a particular observation. The number of episodes in the cause sequence of a rule is called the ``depth" of a rule.
 
-The authors used a tree data structure to store rules, but this choice does not effect functionality. So rather than explain this tree, we merely define the function \scshape GetRule \normalfont that takes as inputs both a cause sequence and a effect then produces as an output the corresponding rule. We also define ``rule group" as the set of all rules with the same cause sequence and the function \scshape GetRuleGroup \normalfont that takes as an input a cause sequence and produces as an output the corresponding rule group.
+The authors used a tree structure to store rules, but this choice does not effect functionality. So rather than explain this tree, we merely define the function \scshape GetRule \normalfont that takes as inputs both a cause sequence and a effect then produces as an output the corresponding rule. We also define ``rule group" as the set of all rules with the same cause sequence and the function \scshape GetRuleGroup \normalfont that takes  a cause sequence as an input and produces the corresponding rule group as an output.
+
+Since the agent does not have access to the underlying FSM, it cannot compute the probabilities for rules exactly. Instead, the agent estimates the probability using the rate at which the effect follows the cause sequence in episodic memory. For example, if $0b$ occurs $10$ times in memory and $0b,G$ occurs $3$ times in memory, then the agent would use the rule $$0b \rightarrow G: 30\%.$$
 
 %There are multiple rules with the same cause sequence. For instance, both $1a \rightarrow 0: 3$ and $1a \rightarrow G: 2$ may be rules. By comparing all rules with the same cause sequence, the agent can compute the probability that any particular effect will occur. We will call this set of rules a ``rule group." We define the function called \scshape GetRuleGroup\normalfont(episodes), which takes an array of episodes and returns the corresponding rule group.
 
@@ -368,7 +370,7 @@ To compare the value of this exploration to other actions we have taken, we must
 	
 \end{algorithmic}
 
-As a benefit of this technique, we have derived a quantitative value of exploration without using hyperparameters, in contrast to traditional techniques for solving bandit problems such as $\epsilon$-greedy strategies or Q-learning. This fact makes this technique particularly suitable to online learning and artificial general intelligence problems where hyperparameter tuning is not possible or feasible. Also of note is that $\frac{1}{p}$ exactly equals the average number of steps to goal over the lifetime of the agent. (MENTION POKER?) This means that ARO's explore-exploit solution has an intuitive description: explore if the alternative is worse than average.
+As a benefit of this technique, we have derived a quantitative value of exploration without using hyperparameters, in contrast to traditional techniques for solving bandit problems such as $\epsilon$-greedy strategies or Q-learning. This fact makes this technique particularly suitable to online learning and artificial general intelligence problems where hyperparameter tuning is not possible or feasible. Also of note is that $\frac{1}{p}$ exactly equals the average number of steps to goal over the lifetime of the agent. (MENTION POKER?) This means that ARO's explore-exploit solution has an intuitive description: explore if the alternative is worse than average. TODO: CITE!
 
 \subsection{Sequence Selection}
 
@@ -413,8 +415,11 @@ To assess ARO, we compared its performance in the OSFSM environment to
 that of two other algorithms: MaRz \cite{Rodriguez17} and Nearest
 Sequence Memory \cite{McCallum95}.
 
-MaRz, as described above, an is algorithm that searches for the
-shortest universal sequence of its environment.
+MaRz is algorithm for the blind FSM environment that searches for the
+shortest universal sequence of the FSM. Like ARO, MaRz navigates these
+machines without the use of hyperparameters. However, MaRz does not use
+sensory input, so it cannot navigate the OSFSM environment any more effectively
+than the blind FSM environment. 
 
 Nearest Sequence Memory (NSM) a reinforcement learning algorithm
 paired with an episodic memory and, thus, is suited to environments
@@ -426,8 +431,8 @@ optimal performance.
 
 Figure \ref{fig4} below shows the performance of all three agents in
 the Blind FSM environment.  These results are shown for a FSM with
-***50 states and a three-letter alphabet (three possible actions per
-state).  The ordinal measures successive trips the the goal.  The
+50 states and a three-letter alphabet (three possible actions per
+state).  The ordinal measures successive trips to the goal.  The
 abscissa measures the number of actions required to reach the goal on
 that trip.  As the agent repeats its task, it gains more and more
 experiences (episodes) that it can draw upon to improve its future
@@ -435,16 +440,14 @@ behavior.
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=0.9\columnwidth]{BFSMResult.png} % Reduce the figure size so that it is slightly narrower than the column. Don't use precise values for figure width.This setup will avoid overfull boxes. 
-  \caption{Agents in the Blind FSM Environment}
+  \includegraphics[width=0.9\columnwidth]{BlindFSMGraph.png} % Reduce the figure size so that it is slightly narrower than the column. Don't use precise values for figure width.This setup will avoid overfull boxes. 
+  \caption{Agents in the Blind FSM Environment with 50 states and an alphabet size of 3. Data averaged from 1000 trials with random FSMs.}
   \label{fig4}
 \end{figure}
 
 *** TODO: Figure 4 will need to be modified as follows:
 
 ***    a) we need to put data from MaRz in there.
-
-***    b) generate more data so we have a smoother curve
 
 ***    c) we can't rely on colors as this will be printed in b/w
 
@@ -461,8 +464,8 @@ the machine is the same: 50 states, 3 letter alphabet.
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=0.9\columnwidth]{OSFSMResult.png} % Reduce the figure size so that it is slightly narrower than the column. Don't use precise values for figure width.This setup will avoid overfull boxes. 
-  \caption{Agents in the Odd-Sensor FSM Environment}
+  \includegraphics[width=0.9\columnwidth]{OSFSMGraph.png} % Reduce the figure size so that it is slightly narrower than the column. Don't use precise values for figure width.This setup will avoid overfull boxes. 
+  \caption{Agents in the Odd-Sensor FSM Environment with 50 states and an alphabet size of 3. Data averaged from 1000 trials with random FSMs.}
   \label{fig5}
 \end{figure}
 
@@ -478,24 +481,26 @@ the machine is the same: 50 states, 3 letter alphabet.
 As shown, ARO is able to learn near optimal behavior much more rapidly
 than the other algorithms.  These results were consistent across a
 variety of different machines ranging from [min] to [max] states and
-alphabets of [min] to [max] letters.
+alphabets of [min] to [max] letters. CAN WE SAY THIS?
 
 ***TODO:  fill in [min] and [max] above.
 
 \section{Future Work}
 
 This work demonstrates that ARO is effective in two specific
-environments with extreme state aliasing. Other tests have indicated that ARO can handle other deterministic environments as well.
+environments with extreme state aliasing. Other tests have indicated that ARO can handle other deterministic environments as well, including environments with little state aliasing.
 
-The most pressing concern is that it is not obvious how best to expand
-ARO's rule tree to accommodate sensors with a stochastic element. Storing all possible rules can quickly become infeasible in terms of memory, and ARO has no way to disregard the stochastic element. This means that if ARO is given a random observation function, it must learn how to reach the goal for every sequence of random observations separately, which makes it perform significantly worse than if ARO was simply given a Blind FSM to navigate. 
+The most pressing concern is that it is not obvious how best to generalize
+ARO to accommodate a stochastic observation function, such as a function that returns $0$ or $1$ at random. With a random observation function, storing all possible rules can quickly become infeasible in terms of memory because the number of rules with a given depth is exponential and unbounded. This is unlike a deterministic observation function, where the number of rules with a given depth is no greater than the total number of states of the FSM - one rule corresponding to each possible initial state of the agent at the beginning of the cause sequence. Furthermore, ARO has no means of recognizing that the observations it receives are random, so it uses rules trying to predict the value of random observations as a basis to try to reach the goal. These factors cause ARO to perform poorly.
+
+It is also not clear how ARO should deal with multiple observation functions, such as an odd/even observation function and a mod 3 observation function. While ARO can treat the tuple of observations as a single observation, this ignores rules that can be formed by ignoring some of the observations in the cause or effect of the rule.
 
 ARO may also need to be adjusted to address environment with these
 properties:
 \begin{itemize}
 \item a reward function rather than a single goal state
 \item a non-deterministic FSM
-\item a dynamic transition table
+\item a dynamic transition table IS THIS THE SAME?
 \end{itemize}
 
 \begin{quote}
