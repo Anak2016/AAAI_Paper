@@ -304,12 +304,12 @@ In the Blind FSM environment, $O = \{\epsilon, G\}$ and $f(s) = \epsilon$ for no
 
 \section{ARO Overview}
 
-We are now ready to present ARO, an algorithm designed for navigating environments with extreme state aliasing such as Blind FSM and OSFSM. Furthermore, ARO can easily incorporate expert knowledge into its actions to improve learning speed and performance.
+We are now ready to present ARO, an algorithm designed for navigating environments with extreme state aliasing such as Blind FSM and OSFSM.
 %ARO can be described in three parts: a data structure to store episodic memories and to describe what is currently known about the position of the agent in the machine, a method to estimate the value of exploring vs exploiting based on the data gathered, and an algorithm to use the data structure and the explore-exploit heuristic to decide what action to perform.
 
 \subsection{Rules}
 
-ARO stores previous events in units called ``episodes." Each episode consists of the tuple $(o, a)$, where $o$ is the observation $f(s)$ and $a$ is the action taken after the observation. In the OSFSM environment, an example episode may be $(1,b)$. When the agent reaches the goal, the action is irrelevant, so we denote such an episode simply with ``G." In non-goal episodes, we concatenate the tuple for brevity, so the above episode would be denoted ``1b". In this episode, the agent was in an odd state and took action $b$.
+ARO stores previous events in units called ``episodes." Each episode consists of the tuple $(o, a)$, where $o$ is the observation $f(s)$ and $a$ is the action taken after the observation. In the OSFSM environment, an example episode may be $(1,b)$. In this episode, the agent was in an odd-numbered state and took action $b$. When the agent reaches the goal, the action is irrelevant, so we denote such an episode simply with ``G." In non-goal episodes, we concatenate the tuple for brevity, so the above episode would be denoted ``1b". 
 
 Using these episodic memories, the agent records patterns of cause and effect in a structure called a \textit{rule}. Rules are denoted like this example: $$1a \rightarrow 1: 23\%.$$ This rule states that being in an odd state and taking action $a$ ``caused" an odd state $23\%$ of the time. The effect part of a rule is always in this same style, but causes may be more complex. For example, consider this rule: $$0b,1a \rightarrow 1: 6\%.$$ 
 %This rules says that the agent taking action $a$ while being in an odd state that was reached by taking a $b$ from an even state has caused an odd state $6\%$ of the time. In general, a rule consists of a sequence of episodes as the ``cause", an observation $o \in O$ as an ``effect," and the probability that the cause produces the stated effect. 
@@ -317,7 +317,7 @@ This rule states that being in an even state and performing action $b$, then rea
 
 More formally, a rule consists of three parts: a sequence of episodes of any length known as the \emph{cause sequence}, an observation known as the \emph{effect}, and a probability. The cause sequence of a rule may be empty, which can be interpreted as the probability  that transitioning to a new state causes a particular observation. The number of episodes in the cause sequence of a rule is called the \textit{depth} of a rule.
 
-The three examples for rules given in the background section may now be formally stated. Note that some of these examples require a set of rules, for brevity $*$ will denote any possible value.
+The three examples for rules given in the background section may now be formally stated. Because some of these examples require a set of similar rules, we will use $*$ to denote any possible value for brevity.
 \begin{itemize}
 	\item $*a \rightarrow x: 100\%$
 	\item $*a_0, xa_1 \rightarrow G: 100\%$
@@ -325,11 +325,10 @@ The three examples for rules given in the background section may now be formally
 \end{itemize}
 As we can see from the final example, it is often useful to consider the set of all rules with the same cause sequence. This lets us consider all possible outcomes from taking a particular action. We call such a set of rules a \textit{rule group}.
 
-The authors used a tree structure to store rules, but this choice does not effect functionality. So rather than explain this tree, we merely define the function \scshape GetRule \normalfont that takes as inputs both a cause sequence and a effect then produces as an output the corresponding rule. We also define the function \scshape GetRuleGroup \normalfont that takes  a cause sequence as an input and produces the corresponding rule group as an output.
+We used a tree structure to store rules, but this choice does not effect functionality. So rather than explain this tree, we merely define the function \scshape GetRule \normalfont that takes as inputs both a cause sequence and an effect then produces as an output the corresponding rule. We also define the function \scshape GetRuleGroup \normalfont that takes  a cause sequence as an input and produces the corresponding rule group as an output.
 
 Since the agent does not have access to the underlying FSM, it cannot compute the probabilities for rules exactly. This leaves us with two choices for developing the rules: learned knowledge and expert knowledge. For learned knowledge, the agent estimates the probability using the rate at which the effect follows the cause sequence in episodic memory. For example, if $0b$ occurs $10$ times in memory and $0b,G$ occurs $3$ times in memory, then the agent would use the rule $$0b \rightarrow G: 30\%.$$ Expert knowledge can be used instead of this estimate if it is provided to the agent. \scshape GetRule \normalfont does not distinguish between the source of the rule when providing it to the agent.
 
-Bayesian prior for combining expert + learned knowledge?
 
 %There are multiple rules with the same cause sequence. For instance, both $1a \rightarrow 0: 3$ and $1a \rightarrow G: 2$ may be rules. By comparing all rules with the same cause sequence, the agent can compute the probability that any particular effect will occur. We will call this set of rules a ``rule group." We define the function called \scshape GetRuleGroup\normalfont(episodes), which takes an array of episodes and returns the corresponding rule group.
 
