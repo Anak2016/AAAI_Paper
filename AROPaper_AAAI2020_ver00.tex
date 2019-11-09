@@ -317,7 +317,7 @@ This rule states that being in an even state and performing action $b$, then rea
 
 More formally, a rule consists of three parts: a sequence of episodes of any length known as the \emph{cause sequence}, an observation known as the \emph{effect}, and a probability. The cause sequence of a rule may be empty, which can be interpreted as the probability  that transitioning to a new state causes a particular observation. The number of episodes in the cause sequence of a rule is called the \textit{depth} of a rule.
 
-The three examples for rules given in the background section may now be formally stated. Because some of these examples require a set of similar rules, we will use $*$ to denote any possible value for brevity.
+The three examples for rules given in the background section may now be formally stated. We will use $*$ to denote any possible value.
 \begin{itemize}
 	\item $*a \rightarrow x: 100\%$
 	\item $*a_0, xa_1 \rightarrow G: 100\%$
@@ -325,7 +325,7 @@ The three examples for rules given in the background section may now be formally
 \end{itemize}
 As we can see from the final example, it is often useful to consider the set of all rules with the same cause sequence. This lets us consider all possible outcomes from taking a particular action. We call such a set of rules a \textit{rule group}.
 
-We used a tree structure to store rules, but this choice does not effect functionality. So rather than explain this tree, we merely define the function \scshape GetRule \normalfont that takes as inputs both a cause sequence and an effect then produces as an output the corresponding rule. We also define the function \scshape GetRuleGroup \normalfont that takes  a cause sequence as an input and produces the corresponding rule group as an output.
+We used a tree structure to store rules, but this choice does not effect functionality (CITE USM?). So rather than explain this tree, we merely define the function \scshape GetRule \normalfont that takes as inputs both a cause sequence and an effect then produces as an output the corresponding rule. We also define the function \scshape GetRuleGroup \normalfont that takes  a cause sequence as an input and produces the corresponding rule group as an output.
 
 Since the agent does not have access to the underlying FSM, it cannot compute the probabilities for rules exactly. This leaves us with two choices for developing the rules: learned knowledge and expert knowledge. For learned knowledge, the agent estimates the probability using the rate at which the effect follows the cause sequence in episodic memory. For example, if $0b$ occurs $10$ times in memory and $0b,G$ occurs $3$ times in memory, then the agent would use the rule $$0b \rightarrow G: 30\%.$$ Expert knowledge can be used instead of this estimate if it is provided to the agent. \scshape GetRule \normalfont does not distinguish between the source of the rule when providing it to the agent.
 
@@ -363,16 +363,16 @@ Given a sequence of previous episodes that have occurred and an observation, we 
 \end{algorithmic}
 \end{comment}
 
-
+\algrenewcommand\algorithmicindent{1.25em}
 \begin{algorithmic}[1]
-	\Function{ExpectedValue}{Episode[] $episodes$, Observation $o$}
+	\Function{EV}{Episode[] $episodes$, Observation $o$}
 		\State $BestSum = \infty$
 		\State $BestMove = \epsilon$
 		\For{$a$ in $\alpha$}
 			\State $Sum = 0$
 			\State Let $next = (o, a)$ be a new episode.
-			\State Let $nextSequence$ be $episodes$ appended by $next$
-			\State $nextGroup =$ \Call{GetRuleGroup}{$nextSequence$} % Note: This looks awful because LaTeX spreads out spacing. This will need the full page to loook correct
+			\State Let $nextSeq$ be $episodes$ appended by $next$
+			\State $nextGroup =$ \Call{GetRuleGroup}{$nextSeq$} % Note: This looks awful because LaTeX spreads out spacing. This will need the full page to loook correct
 			\If{$nextGroup$ is empty}
 				\State $Sum = $ \Call{GetHeuristic}{~} \label{line:heuristic}
 			\EndIf
@@ -382,7 +382,7 @@ Given a sequence of previous episodes that have occurred and an observation, we 
 				\If{$e = G$}
 					\State $Sum = Sum + p$
 				\Else
-					\State $Sum = Sum + p*($\Call{ExpectedValue}{$nextSequence$, $e$} $ + 1)$
+					\State $Sum = Sum + p*($\Call{EV}{$nextSeq$, $e$} $ + 1)$
 				\EndIf
 			\EndFor
 			\If{$Sum < BestSum$}
@@ -394,16 +394,16 @@ Given a sequence of previous episodes that have occurred and an observation, we 
 	\EndFunction
 \end{algorithmic}
 
-This algorithm also computes the move that will take the fewest number of steps to reach the goal on average, stored in the $BestMove$ variable. Let \scshape GetBestMove \normalfont be a function that, when given the same inputs as \scshape ExpectedValue\normalfont, will return the value of the $BestMove$ variable. The action returned by \scshape GetBestMove \normalfont will minimize the expected number of steps to the goal based on what the agent has learned about the environment, so we would expect this would minimize the average number of steps to the goal  over the long term. ARO uses the function to determine what action to make.
+This algorithm also computes the move that will take the fewest number of steps to reach the goal on average, stored in the $BestMove$ variable. Let \scshape GetBestMove \normalfont be a function that, when given the same inputs as \scshape EV\normalfont, will return the value of the $BestMove$ variable. The action returned by \scshape GetBestMove \normalfont will minimize the expected number of steps to the goal based on what the agent has learned about the environment, so we would expect this would minimize the average number of steps to the goal  over the long term. ARO uses this function to determine what action to make.
 %The agent may call this function, supplying the most recent observation and an episode sequence ending at its most recent episode or an empty sequence. Thus, performing the action $BestMove$ can be used as a policy for the agent, and should minimize the average steps to goal based on what the agent has learned about the environment. In fact, this is exactly what ARO does. 
 
-There are two aspects of this policy that are not yet explained. First, we cannot compute an expected value for a move we have never taken before. This case is dealt with in line \ref{line:heuristic} of the code with the \scshape GetHeuristic \normalfont function, which we have not defined. Second, there are multiple sequences the agent may pass into \scshape ExpectedValue\normalfont, from an empty sequence to the entire span of its episodic memory. Each sequence may produce a different expected value and recommended move to make, and the agent must choose which recommendation to follow. These are the corresponding topics of the next two sections.
+There are two aspects of this policy that are not yet explained. First, we cannot compute an expected value for a move we have never taken before. This case is dealt with in line \ref{line:heuristic} of the code with the \scshape GetHeuristic \normalfont function, which we have not yet defined. Second, there are multiple sequences the agent may pass into \scshape GetBestMove\normalfont. For instance, if the most recent episodes are $1a,0a$ and the last observation was $0$, the agent may call \scshape GetBestMove\normalfont($[]$, $0$), \scshape GetBestMove\normalfont($[0a]$, $0$), or \scshape GetBestMove\normalfont($[1a, 0a]$, $0$). Each sequence may produce a different recommendation, and the agent must choose which recommendation to follow. These are the corresponding topics of the next two sections.
 
 \subsection{Explore Heuristic}
 %Let us first deal with the case where we have no rules in a rule group and we must find the expected value. This occurs if the agent has never observed the sequence of episodes corresponding to the rule group. Let $e = (o, a)$ be the last episode in the rule group cause sequence and $seq$ be the rest of the sequence. This situation is equivalently described as follows: the agent has never recorded episodes in the sequence $seq$, then observed $o$ and performed action $a$. Thus, taking action $a$ can be considered an "exploration" by the agent. We therefore need to decide the value of exploring in this environment, which is clearly a bandit problem. Specifically, this is a contextual bandit problem with $seq$ and $o$ forming the context and the arms being the actions in $\alpha$. However, in this context
-Let us first deal with the case where we must calculate an expected value for a rule group containing no rules. This can be equivalently stated as follows: ARO has never seen the episode sequence $episodes$ occur, then observed the observation $o$, and then performed some action $a$. Furthermore, no expert has provided knowledge on what they expect to occur in this scenario. Thus, taking action $a$ can be thought of as an ``exploration" by the agent. The agent must choose between the value of exploring this new action and exploiting its existing knowledge to reach the goal. While the explore-exploit tradeoff is well studied under the context of the Mulit-Armed Bandit problem and has several known solutions, we may use existing knowledge of this scenario to make a more specific solution. (CITE USM: Exploring in these environments is notoriously difficult) 
+Let us first deal with the case where we must calculate an expected value for a rule group containing no rules. This can be equivalently stated as follows: ARO has never seen the episode sequence $episodes$ occur, then observed the observation $o$, and then performed some action $a$. Furthermore, no expert has provided knowledge on what they expect to occur in this scenario. Thus, taking action $a$ can be thought of as an ``exploration" by the agent. The agent must choose between exploring this new action and exploiting its existing knowledge to reach the goal. While the explore-exploit tradeoff is well studied under the context of the Mulit-Armed Bandit problem and has several known solutions, we may use existing knowledge of this scenario to make a more specific solution. (CITE USM: Exploring in these environments is notoriously difficult) 
 
-To compare the value of this exploration to other actions we have taken, we must decide the value of exploring in the units of expected value.  It is possible to find an estimate of the expected value by using the rule group corresponding to removing the first episode from $episodes$. However, repeating this process can lead to infinite depth recursion. Rather than creating a suitable base case to make the recursion finite, we instead attempt to estimate the value that this recursion will return. Let $p$ denote the probability of reaching the goal according to the $0$-deep rule $\rightarrow G : p$. We note that if we were to continue recursion infinitely, the probability of reaching the goal in any step should converge on $p$. If we estimate that this probability holds constant on every step, then the number of steps to goal follows a Geometric distribution with probability $p$. This gives an expected value of $\frac{1}{p}$. To prevent dividing by $0$, we add $1$ to the number of goals observed when calculating $p$. (Sunrise problem?) Hence, we can now define the heuristic function:
+To compare the value of this exploration to other actions we have taken, we must decide the value of exploring in the units of expected value.  It is possible to find an estimate of the expected value by using the rule group corresponding to removing the first episode from $episodes$. However, repeating this process can lead to infinite depth recursion. Rather than creating a suitable base case to make the recursion finite, we instead attempt to estimate the value that this recursion will return. Let $p$ denote the probability of reaching the goal according to the $0$-deep rule $\rightarrow G : p$. We note that if we were to continue recursion infinitely, the probability of reaching the goal in any step should converge on $p$. If we estimate that this probability holds constant on every step, then the number of steps to goal follows a Geometric distribution with probability $p$. This gives an expected value of $\frac{1}{p}$. To prevent dividing by $0$, we add $1$ to the number of goals observed when calculating $p$. Hence, we can now define the heuristic function:
 
 \begin{algorithmic}[-1]
 	
@@ -413,32 +413,33 @@ To compare the value of this exploration to other actions we have taken, we must
 	
 \end{algorithmic}
 
-As a benefit of this technique, we have derived a quantitative value of exploration without using hyperparameters, in contrast to traditional techniques for solving bandit problems such as $\epsilon$-greedy strategies or Q-learning. This fact makes this technique particularly suitable to online learning and artificial general intelligence problems where hyperparameter tuning is not possible or feasible. Also of note is that $\frac{1}{p}$ exactly equals the average number of steps to goal over the lifetime of the agent. (MENTION POKER?) This means that ARO's explore-exploit solution has an intuitive description: explore if the alternative is worse than average. TODO: CITE!
+As a benefit of this technique, we have derived a quantitative value of exploration without using hyperparameters, in contrast to traditional techniques such as $\epsilon$-greedy strategies (CITE). This fact makes this technique particularly suitable to online learning and artificial general intelligence problems where hyperparameter tuning is not desirable. Also of note is that $\frac{1}{p}$ nearly equals the average number of steps to goal over the lifetime of the agent (they are not equal because we must add one to the number of goals). (MENTION POKER?) This means that ARO's explore-exploit solution has an intuitive description: explore if the alternative is worse than average.
 
 \subsection{Sequence Selection}
 
-The agent may now calculate the best move given a sequence of recent episodes. However, different sized sequences may produce different results. With a large sequence, the episode sequence may be unique or rare in memory, producing poor results. Furthermore, a long sequence may contain superfluous information, which would imply that we are unnecessarily disregarding information from other, similar sequences. With a small sequence, the episode sequence may be too common for the agent to know where it is in the machine or to determine if it is going in a loop, which could cause undesirable behavior such as infinite looping. To resolve this dilemma, ARO uses the episode sequence that produces the smallest expected value. Hence, if the agent does have knowledge of a fast path to the goal from any valid context, it will take it. We expect this strategy to help reduce regret. If, on the other hand, the agent lacks useful knowledge of a quick path to a goal, it can fall back on a longer but more reliable path by using a short sequence. This alone, however, is not sufficient to prevent loops.
+The agent may now calculate the best move given a sequence of recent episodes. However, different sized sequences may produce different results. If a large sequence is used, the episode sequence is more likely to be rare in memory, producing unreliable predictions. Furthermore, a long sequence may contain superfluous information, which would imply that a more common and shorter sequence would be a sufficient state identifier. With a small sequence, the episode sequence may be too common for the agent to know where it is in the machine or to determine if it is going in a loop, which could cause undesirable behavior such as infinite looping. To resolve this dilemma, ARO uses a greedy strategy of taking the episode sequence that produces the smallest expected value. Hence, if the agent has knowledge of a fast path to the goal, it will take it regardless of sequence length. We expect this strategy to help reduce regret.
 
-At timestep $t$, say the sequence $seq$ has the property \scshape ExpectedValue\normalfont($seq$) $ = x$, where $x$ is the minimal expected value. Hence, the action \scshape GetBestMove\normalfont($seq$) is performed. Let $nextSeq$ be $seq$ appended by the new episode generated by performing that action. We found that the expected value of $nextSeq$ in timestep $t+ 1$ can be higher than $x$, usually from an improbable event informing the agent that it is farther from the goal than the average case. When this occurred, the agent would often switch to a shorter sequence with a better expected value for a move recommendation. However, this is not because the agent actually knows a faster path to goal, but because the agent effectively ``forgets" that it is in a poor position. After the agent has performed a few moves, it will again learn that it is in a poor position and switch to a shorter sequence for a recommendation. By repeating this behavior, the agent gets stuck in a loop. To deal with this issue, we force the agent to deal with the bad event by not letting the agent switch to a different sequence for a move recommendation. In other words, if $seq$ was used to find  the best move at timestep $t$, then $nextSeq$ must be used to find the best move at timestep $t+1$. There are two exceptions to this rule. First, if the agent observes a goal. Because the agent is moved randomly upon reaching the goal state, there is no information to be gained by using a sequence with a goal observation. Second, if the agent discovers a new rule for which the current sequence is the cause sequence. This implies the agent is in a novel scenario and the current sequence can provide no data to guide the agent, so a new sequence must be selected to choose how to act.
+This alone, however, is not sufficient to prevent loops. At timestep $t$, say the sequence $seq$ has the property \scshape EV\normalfont($seq$) $ = x$, where $x$ is the minimal expected value. Hence, the action \scshape GetBestMove\normalfont($seq$) is performed. Let $nextSeq$ be $seq$ appended by the new episode generated by performing that action. We found that the expected value of $nextSeq$ in timestep $t+ 1$ can be higher than $x$, usually from an improbable event informing the agent that it is farther from the goal than the average case. When this occurred, we observed that the agent would often switch to a shorter sequence with a better expected value for a move recommendation. However, this is not because the agent actually knows a faster path to goal, but because the agent effectively ``forgets" that it is in a poor position. After the agent has performed a few moves, it will again learn that it is in a poor position and switch to a shorter sequence for a recommendation. By repeating this behavior, the agent gets stuck in a loop. 
 
-Using these rules, we can now fully define the policy of ARO. We define the global variable $prevSequence$, which stores the sequence from the previous time step used to determine which action to take. ARO's policy is then described in the following algorithm.
+To deal with this issue, we force the agent to deal with the bad event by not letting the agent switch to a different sequence for a move recommendation. In other words, if $seq$ was used to find  the best move at timestep $t$, then $nextSeq$ must be used to find the best move at timestep $t+1$. There are two exceptions to this rule:
+\begin{enumerate}
+	\item The agent observes a goal. Because the agent is moved randomly upon reaching the goal state, there is no information to be gained by using a sequence with a goal observation.
+	\item $nextSeq$ is unique. This implies the agent is in a novel scenario and the current sequence can provide no data to guide the agent.
+\end{enumerate}
 
-
+Using these procedures, we can now fully define the policy of ARO. We define the global variable $prevSequence$, which stores the sequence from the previous time step used to determine which action to take, and is initialized to the empty sequence. ARO's policy is then described in the following algorithm.
 
 \begin{algorithmic}
-	
-	\State Initialize $prevSequence$ to the empty sequence.
-
 	\Function{Policy}{Observation $o$}
 		\If{$o = G$}
 			\State Set $prevSequence$ to the empty sequence.
-			\State \Return
+			\State \Return $\alpha$[0]
 		\EndIf
 		\State Let $e$ be the last episode.
 		\State Let $seq$ be $prevSeq$ appended by $e$.
 		\State Let $f$ be the frequency of $seq$ in episodic memory
 		\If{$f = 1$ or $seq$ contains the episode $G$}
-			\State Set $prevSeq$ to the sequence of recent episodes such that \Call{ExpectedValue}{$prevSeq$, $o$} is minimized.
+			\State Set $prevSeq$ to the sequence of recent episodes such that \Call{EV}{$prevSeq$, $o$} is minimized.
 			\State \Return \Call{GetBestMove}{$prevSeq$}
 		\Else
 			\State $prevSeq = seq$
@@ -456,30 +457,16 @@ Using these rules, we can now fully define the policy of ARO. We define the glob
 
 To assess ARO, we compared its performance in the OSFSM environment to
 that of two other algorithms: MaRz \cite{Rodriguez17} and Nearest
-Sequence Memory \cite{McCallum95}.
+Sequence Memory \cite{McCallum95}. Since these agents cannot incorporate knowledge engineering no rules were provided for ARO \textit{a priori}. Since we would expect that being provided expert rules would improve performance, this data can be seen as a worst-case outcome for ARO.
 
-MaRz is algorithm for the blind FSM environment that searches for the
-shortest universal sequence of the FSM. Like ARO, MaRz navigates these
-machines without the use of hyperparameters. However, MaRz does not use
-sensory input, so it cannot navigate the OSFSM environment any more effectively
-than the blind FSM environment. 
-
-Nearest Sequence Memory (NSM) a reinforcement learning algorithm
-paired with an episodic memory and, thus, is suited to environments
-with extreme state aliasing like the OSFSM.  In brief, NSM treats
-sequences of episodes as ``states'' for the purpose of calculating
-Q-values.  Unlike MaRz and ARO, NSM is not a general algorithm and
-must be tuned to a particular environment in order to guarantee
-optimal performance.
+There were a few modifications to the implementation of ARO from the specification to improve memory usage and run time. First, we discovered that there was no need to record a rule if a prefix of the cause sequence was unique. If the prefix occurs again, we may look back through memory to create the rule on the fly. This modification does not effect the behavior of ARO. Second, we cache the result of \scshape GetEV \normalfont and \scshape GetBestMove\normalfont after every goal, which dramatically improves computation time. This technically deviates from the specification because the value of \scshape GetHeuristic \normalfont is saved and not recomputed. Since $1/p$ trends downward as the agent learns more, this means that the agent undervalues explores compared to the specification. We found the overall effect on the agent to be small.
 
 Figure \ref{fig4} below shows the performance of all three agents in
-the Blind FSM environment.  These results are shown for a FSM with
+the Blind FSM environment.  Figure \ref{fig5} shows the results for the OSFSM environment.  These results are shown for a FSM with
 50 states and a three-letter alphabet (three possible actions per
 state).  The ordinal measures successive trips to the goal.  The
 abscissa measures the number of actions required to reach the goal on
-that trip.  As the agent repeats its task, it gains more and more
-experiences (episodes) that it can draw upon to improve its future
-behavior.
+that trip.
 
 \begin{figure}[t]
   \centering
@@ -488,43 +475,23 @@ behavior.
   \label{fig4}
 \end{figure}
 
-*** TODO: Figure 4 will need to be modified as follows:
-
-***    a) we need to put data from MaRz in there.
-
-***    c) we can't rely on colors as this will be printed in b/w
-
-***    d) generate as a high quality image, preferably in PDF format
-
+\begin{figure}[t]
+	\centering
+	\includegraphics[width=0.9\columnwidth]{OSFSMGraph.png} % Reduce the figure size so that it is slightly narrower than the column. Don't use precise values for figure width.This setup will avoid overfull boxes. 
+	\caption{Agents in the Odd-Sensor FSM Environment with 50 states and an alphabet size of 3. Data averaged from 1000 trials with random FSMs.}
+	\label{fig5}
+\end{figure}
 
 Predictably, the number of steps to reach the goal declines
 exponential on successive trips the goal indicating that the agent is
 learning to improve its behavior.  This is true for all three
-algorithms.
-
-Figure \ref{fig5} shows the results for the OSFSM environment.  The scope of
-the machine is the same: 50 states, 3 letter alphabet.  
-
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=0.9\columnwidth]{OSFSMGraph.png} % Reduce the figure size so that it is slightly narrower than the column. Don't use precise values for figure width.This setup will avoid overfull boxes. 
-  \caption{Agents in the Odd-Sensor FSM Environment with 50 states and an alphabet size of 3. Data averaged from 1000 trials with random FSMs.}
-  \label{fig5}
-\end{figure}
-
-*** TODO: Figure 5 will need to be modified as follows:
-
-***    a) we can't rely on colors as this will be printed in b/w
-
-***    b) generate more data so we have a smoother curve
-
-***    c) generate as a high quality image, preferably in PDF format
-
+algorithms. MaRz learns faster than NSM for the first few goals but converges at a much less efficient policy.
+ARO learns significantly faster than NSM and converges at a policy with nearly identical performance to NSM.
 
 As shown, ARO is able to learn near optimal behavior much more rapidly
 than the other algorithms.  These results were consistent across a
-variety of different machines ranging from [min] to [max] states and
-alphabets of [min] to [max] letters. CAN WE SAY THIS?
+variety of different machines ranging from 10 to 90 states and
+alphabets of 2 to 9 letters. (Note: some data for NSM was still being gathered at the time of publication)
 
 ***TODO:  fill in [min] and [max] above.
 
@@ -536,14 +503,14 @@ environments with extreme state aliasing. Other tests have indicated that ARO ca
 The most pressing concern is that it is not obvious how best to generalize
 ARO to accommodate a stochastic observation function, such as a function that returns $0$ or $1$ at random. With a random observation function, storing all possible rules can quickly become infeasible in terms of memory because the number of rules with a given depth is exponential and unbounded. This is unlike a deterministic observation function, where the number of rules with a given depth is no greater than the total number of states of the FSM - one rule corresponding to each possible initial state of the agent at the beginning of the cause sequence. Furthermore, ARO has no means of recognizing that the observations it receives are random, so it uses rules trying to predict the value of random observations as a basis to try to reach the goal. These factors cause ARO to perform poorly.
 
-It is also not clear how ARO should deal with multiple observation functions, such as an odd/even observation function and a mod 3 observation function. While ARO can treat the tuple of observations as a single observation, this ignores rules that can be formed by ignoring some of the observations in the cause or effect of the rule.
+ Another potential enhancement is to allow ARO to learn other kinds of rules with more general causes or effects. For example, in our previous examples of rules we used a wildcard character for a rule. While this rule can be provided by an expert, ARO cannot learn such a rule and must instead learn a similar rule for every possible value of the wildcard.
 
 ARO may also need to be adjusted to address environment with these
 properties:
 \begin{itemize}
 \item a reward function rather than a single goal state
 \item a non-deterministic FSM
-\item a dynamic transition table IS THIS THE SAME?
+\item a dynamic transition table
 \end{itemize}
 
 \begin{quote}
