@@ -100,23 +100,11 @@
 
 \usepackage{algorithmicx} % Used for writing algorithms
 \usepackage{algpseudocode} % Default algorithm psedocode for algorimicx
-\usepackage{comment}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  \begin{document}
 
 \maketitle
 
 \begin{abstract}
-\begin{comment}
-Episodic memory, or the ability to remember specific events from your
-past, is an essential part of human cognition.  While most machine
-learning tasks do not require this capability, episodic memory is
-essential for learning in environments with severe state aliasing
-(a.k.a., perceptual aliasing).  In this paper we define two specific
-environments with severe state aliasing and then present ARO, an
-algorithm for learning in such an environment.  Our results show that
-ARO is effective where traditional algorithms would fail.
-\end{comment}
 
 In order to integrate machine learning and knowledge engineering, it is necessary
 to store both learned and engineered knowledge in a common format that can be used
@@ -128,27 +116,6 @@ In this paper, we will define a data structure known as a rule that stores patte
 \noindent
 
 
-\begin{comment}
-The foundation of this work is in research towards an artificial,
-general episodic memory.  Episodic memory is one of three long term
-memories commonly recognized in humans \cite{Tulving83}.  Evidence
-from psychology research indicates that an impaired ability to form
-new episodic memories (i.e., anterograde amnesia) also impairs
-learning \cite{Brooks76}.  Furthermore, common sense tells us
-that possessing a memory of past experiences is essential to a number
-of fundamental cognitive capabilities including our own sense of
-identity \cite{Holland10,Nuxoll12}.
-
-Thus, we believe it behooves those who wish to create an artificial
-general intelligence to seek to create algorithms that possess and
-leverage an artificial, general episodic memory.  An artificial episodic
-memory has been applied to a number of specific environments.
-See \cite{Tecuci07,Brom08,Castro10,Chaudhry18} for a sample.  We know
-of only a few existing approaches to a general artificial episodic
-memory in part of a broad, general
-architecture \cite{Boloni11,Nuxoll12,Menager16}.
-
-\end{comment}
 
 
 \section{Background}
@@ -232,67 +199,67 @@ While it may be possible to modify these algorithms to work with knowledge engin
 \end{itemize}
 All of these examples may be formatted as rules. We will formally define rules later in this paper, but for now it is imperative to more formally define the environments.
 
-\begin{comment}
-For example, consider the state machine in
-Figure \ref{fig1}.
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.6\columnwidth]{ExampleFSM} % Reduce the figure size so that it is slightly narrower than the column. Don't use precise values for figure width.This setup will avoid overfull boxes. 
-\caption{An example Blind FSM}
-\label{fig1}
-\end{figure}
+%%% Re-add this?
+
+%% For example, consider the state machine in
+%% Figure \ref{fig1}.
+
+%% \begin{figure}[t]
+%% \centering
+%% \includegraphics[width=0.6\columnwidth]{ExampleFSM} % Reduce the figure size so that it is slightly narrower than the column. Don't use precise values for figure width.This setup will avoid overfull boxes. 
+%% \caption{An example Blind FSM}
+%% \label{fig1}
+%% \end{figure}
 
 
-%  Here is the transition table for the FSM in the figure
-%          a  b
-%       1  2  1
-%       2  1  G
-%       3  2  3
-%       4  4  5
-%       5  6  5
-%       6  4  G
+%% %  Here is the transition table for the FSM in the figure
+%% %          a  b
+%% %       1  2  1
+%% %       2  1  G
+%% %       3  2  3
+%% %       4  4  5
+%% %       5  6  5
+%% %       6  4  G
 
-The agent begins in a random, non-goal state.  It first takes action
-'b' and does not reach the goal as a result of this action.  While the
-agent does not know the transition table of the FSM, we can look at
-the diagram and know that the agent must have begun in state 1, 3, 4
-or 5 and now must be in state 1, 3 or 5.  As a result, we know that
-the agent is guaranteed to reach the goal in two steps if it takes the
-action \textit{a} followed by \textit{b}.  This makes \textit{bab} a
-universal sequence for this particular FSM.
-\end{comment}
+%% The agent begins in a random, non-goal state.  It first takes action
+%% 'b' and does not reach the goal as a result of this action.  While the
+%% agent does not know the transition table of the FSM, we can look at
+%% the diagram and know that the agent must have begun in state 1, 3, 4
+%% or 5 and now must be in state 1, 3 or 5.  As a result, we know that
+%% the agent is guaranteed to reach the goal in two steps if it takes the
+%% action \textit{a} followed by \textit{b}.  This makes \textit{bab} a
+%% universal sequence for this particular FSM.
 
-\begin{comment}
-\section{A Little Less State Aliasing}
+%% \begin{comment}
+%% \section{A Little Less State Aliasing}
 
-% Do we need to discuss the lack of tuning parameters?
+%% % Do we need to discuss the lack of tuning parameters?
 
-The situation changes once the agent is given additional sensors
-beyond the goal sensor.  Consider an environment like Blind FSM but
-the agent also has a binary sensor that tells it when it is currently
-in an odd state or an even state.  We shall henceforth refer to this
-as the OSFSM (Odd-Sensor Finite State Machine) environment.
+%% The situation changes once the agent is given additional sensors
+%% beyond the goal sensor.  Consider an environment like Blind FSM but
+%% the agent also has a binary sensor that tells it when it is currently
+%% in an odd state or an even state.  We shall henceforth refer to this
+%% as the OSFSM (Odd-Sensor Finite State Machine) environment.
 
-For an OSFSM environment using the FSM in Figure \ref{fig1}, the
-universal sequence (\textit{bab}) is sub-optimal.  The agent can
-consistently reach the goal faster (or at least as fast) by always
-taking action \textit{b} in even numbered states and action \textit{a}
-in odd numbered states.  Thus, the MaRz algorithm needs to be enhanced
-or replaced in such situations.
+%% For an OSFSM environment using the FSM in Figure \ref{fig1}, the
+%% universal sequence (\textit{bab}) is sub-optimal.  The agent can
+%% consistently reach the goal faster (or at least as fast) by always
+%% taking action \textit{b} in even numbered states and action \textit{a}
+%% in odd numbered states.  Thus, the MaRz algorithm needs to be enhanced
+%% or replaced in such situations.
 
-An episodic memory remains essential to be successful in the OSFSM
-environment.  Traditional machine learning algorithms still perform
-poorly in OSFSM since they can still only ever distinguish three
-states.  However, as more and more sensors are provided a traditional
-machine learning algorithm becomes more and more effective.  Thus,
-there is a continuum from complete state aliasing (e.g., the Blind FSM
-environment) to a fully observable environment.
+%% An episodic memory remains essential to be successful in the OSFSM
+%% environment.  Traditional machine learning algorithms still perform
+%% poorly in OSFSM since they can still only ever distinguish three
+%% states.  However, as more and more sensors are provided a traditional
+%% machine learning algorithm becomes more and more effective.  Thus,
+%% there is a continuum from complete state aliasing (e.g., the Blind FSM
+%% environment) to a fully observable environment.
 
-The goal becomes to create an algorithm that can function well in
-both.  This research presents ARO, an initial step toward such an
-algorithm.
-\end{comment}
+%% The goal becomes to create an algorithm that can function well in
+%% both.  This research presents ARO, an initial step toward such an
+%% algorithm.
 
 \section{Environment}
 
@@ -340,28 +307,6 @@ Now that we have a method for storing patterns of cause and effect, we can use t
 
 Given a sequence of previous episodes that have occurred and an observation, we can recursively compute the expected number of moves it will take to reach the goal. This is computed under the assumption that at each choice the agent may have in the future, it will make the best possible move. The algorithm is below.
 
-\begin{comment}
-\begin{algorithmic}[1]
-	\Function{ExpectedValue}{RuleGroup $group$}
-		\State $Sum = 0$
-		\For{$rule$ in $group$}
-			\State Let $p$ be the probability of $rule$ occurring.
-			\State Let $e$ be the effect of $rule$.
-			\If{$e = G$}
-				\State $Sum = Sum + p$
-			\Else
-				\State Let $episodes$ be the cause sequence of $rule$
-				\For{$a$ in $\alpha$}
-					\State Let $next = (e, a)$ be a new episode.
-					\State Let $nextSequence$ be the array $episodes$ appended by $next$
-					\State $nextGroup =$ \Call{GetRuleGroup}{$nextSequence$} % Note: This looks awful because LaTeX spreads out spacing. This will need the full page to loook correct
-					\State $Sum = Sum \ + p*($ \Call{ExpectedValue}{$nextGroup$} $ + 1)$
-				\EndFor
-			\EndIf
-		\EndFor
-	\EndFunction
-\end{algorithmic}
-\end{comment}
 
 \algrenewcommand\algorithmicindent{1.25em}
 \begin{algorithmic}[1]
