@@ -13,6 +13,14 @@
 \frenchspacing  % DO NOT CHANGE THIS
 \setlength{\pdfpagewidth}{8.5in}  % DO NOT CHANGE THIS
 \setlength{\pdfpageheight}{11in}  % DO NOT CHANGE THIS
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Ryan's packagages
+\usepackage{algorithmicx} % Used for writing algorithms
+\usepackage{algpseudocode} % Default algorithm psedocode for algorimicx
+
+
+
 %\nocopyright
 %PDF Info Is REQUIRED.
 % For /Author, add all authors within the parentheses, separated by commas. No accents or commands.
@@ -95,12 +103,7 @@
 }
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Ryan's packagages
-
-\usepackage{algorithmicx} % Used for writing algorithms
-\usepackage{algpseudocode} % Default algorithm psedocode for algorimicx
- \begin{document}
+\begin{document}
 
 \maketitle
 
@@ -192,7 +195,16 @@ utility than others regardless of what non-goal state it is currently
 at. In effect, the agent must de-alias states by using its recent
 memories as an identifier.
 
-We expect that the agent would need a significant amount of experience in order to achieve this de-aliasing. If the agent visits the same state through two different paths, the agent may be unable to tell that the states are the same and must learn separate policies for each. Overall, the agent may need to learn substantially more policies than the number of states in order to successfully navigate such an environment. Because of this hindrance, being able to incorporate existing knowledge into the agent, such as through knowledge engineering, could significantly improve the speed at which the agent learns.
+We expect that the agent would need a significant amount of experience
+in order to achieve this de-aliasing. If the agent visits the same
+state through two different paths, the agent may be unable to tell
+that the states are the same and must learn separate policies for
+each. Overall, the agent may need to learn substantially more policies
+than the number of states in order to successfully navigate such an
+environment. Because of this hindrance, being able to incorporate
+existing knowledge into the agent, such as through knowledge
+engineering, could significantly improve the speed at which the agent
+learns.
 
 In previous research, an algorithm called MaRz \cite{Rodriguez17} has
 shown success in Blind FSM environments.  MaRz performs an
@@ -419,7 +431,7 @@ explore-exploit in environments with extreme perceptual aliasing is
 much more difficult.  A publication by a previous researcher in this
 area stated ``Efficient exploration with hidden state is an extremely
 difficult problem, and remains an area requiring
-work.'' \cite{McCallum95USM}
+work.'' \cite{McCallumUSM95}
 
 To compare the value of this exploration to other actions we have
 taken, we must decide the value of exploring in the units of expected
