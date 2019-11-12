@@ -106,10 +106,19 @@
 
 \begin{abstract}
 
-In order to integrate machine learning and knowledge engineering, it is necessary
-to store both learned and engineered knowledge in a common format that can be used
-by an agent to make intelligent decisions. Such integration is much more useful in data sparse environments, where traditional machine learning techniques fail.
-In this paper, we will define a data structure known as a rule that stores patterns of cause and effect. These rules can easily embed expert knowledge on causal relationships. We will then present ARO, an algorithm for learning rules and using rules to navigate data sparse environments. Our results show that ARO is more effective than other known solutions to this problem. ARO has the additional advantages that it more easily integrates with knowledge engineering techniques and uses no hyperparameters.
+In order to integrate machine learning and knowledge engineering, it
+is necessary to store both learned and engineered knowledge in a
+common format that can be used by an agent to make intelligent
+decisions. Such integration is much more useful in data sparse
+environments, where traditional machine learning techniques fail.  In
+this paper, we will define a data structure known as a rule that
+stores patterns of cause and effect. These rules can easily embed
+expert knowledge on causal relationships. We will then present ARO, an
+algorithm for learning rules and using rules to navigate data sparse
+environments. Our results show that ARO is more effective than other
+known solutions to this problem. ARO has the additional advantages
+that it more easily integrates with knowledge engineering techniques
+and uses no hyperparameters.
 
 \end{abstract}
 
@@ -119,15 +128,21 @@ In this paper, we will define a data structure known as a rule that stores patte
 
 
 \section{Background}
-In environments with an abundance of data, machine learning agents are effective at learning patterns, even those not known by experts in the domain (CITE something). However, in data-sparse environments, traditional machine learning agents fail (CITE). We find that this kind of environment would be ideal for the integration of knowledge engineering with machine learning techniques. One such environment is the Blind Finite State Machine
-environment.  In this environment, the agent navigates a finite state
-machine (FSM) \cite{Hopcroft06} to reach a goal state.  The machine is
-designed so that the agent can reach the goal from any state (no dead
-ends) but otherwise the transition table is randomly generated.  Upon
-reaching the goal the agent is immediately moved to a randomly
-selected, non-goal state and informed of its success.  Thus the agent
-knows when it reaches the goal but can never actually take an action
-in the goal state.
+
+In environments with an abundance of data, machine learning agents are
+effective at learning patterns, even those not known by experts in the
+domain. However, in data-sparse environments, traditional machine
+learning agents fail \cite{Chrisman92}. We find that this kind of
+environment would be ideal for the integration of knowledge
+engineering with machine learning techniques. One such environment is
+the Blind Finite State Machine environment.  In this environment, the
+agent navigates a finite state machine (FSM) \cite{Hopcroft06} to
+reach a goal state.  The machine is designed so that the agent can
+reach the goal from any state (no dead ends) but otherwise the
+transition table is randomly generated.  Upon reaching the goal the
+agent is immediately moved to a randomly selected, non-goal state and
+informed of its success.  Thus the agent knows when it reaches the
+goal but can never actually take an action in the goal state.
 
 The task seems trivial at first.  However, it is greatly complicated
 because the agent is only aware of the following:
@@ -167,31 +182,56 @@ there is a continuum from complete state aliasing (e.g., the Blind FSM
 environment) to a fully observable environment.
 
 To be successful in the Blind FSM or OSFSM environments, an agent must map
-\textit{sequences of episodes} to actions where an episode is in this
+\textit{sequences of experiences} to actions. An experience, in this case, is in this
 case as the agent's sensory input and the action it selected.  For
-example, the agent can learn that if it takes actions $a_1, a_2, ..., a_n$
-in sequence and does not reach the goal then it can subsequently
+example, the agent can learn that if it takes actions $a_1, a_2, ...,
+a_n$ in sequence and does not reach the goal then it can subsequently
 reach the goal in a single step by taking action $a^*$.  Furthermore,
 the agent can learn that certain sequences of actions have more
 utility than others regardless of what non-goal state it is currently
-at. In effect, the agent must de-alias states by using its recent memories as an identifier.
+at. In effect, the agent must de-alias states by using its recent
+memories as an identifier.
 
 We expect that the agent would need a significant amount of experience in order to achieve this de-aliasing. If the agent visits the same state through two different paths, the agent may be unable to tell that the states are the same and must learn separate policies for each. Overall, the agent may need to learn substantially more policies than the number of states in order to successfully navigate such an environment. Because of this hindrance, being able to incorporate existing knowledge into the agent, such as through knowledge engineering, could significantly improve the speed at which the agent learns.
 
 In previous research, an algorithm called MaRz \cite{Rodriguez17} has
 shown success in Blind FSM environments.  MaRz performs an
-A*-Search \cite{Russell09}over possible sequences of actions to find
+A*-Search \cite{Russell09} over possible sequences of actions to find
 the shortest \textit{universal sequence}.  A universal sequence is a
 sequence of actions that causes the agent to reach the goal from any
 non-goal state, and such a sequence must always exist in an FSM where every state has a path to goal.
 
-However, MaRz cannot incorporate observations into its algorithm, making it particularly narrow in score. Furthermore, our tests indicate that MaRz performance begins to break down in very large state machines. Finally, the best candidate we see for using knowledge engineering in this algorithm is through the heuristic function for the search. But the method for converting expert domain knowledge into a search heuristic seems non-trivial.
+However, MaRz cannot incorporate observations into its algorithm,
+making it particularly narrow in scope. Furthermore, our tests
+indicate that MaRz performance begins to break down in very large
+state machines. Finally, the best candidate we see for using knowledge
+engineering in the MaRz algorithm is through the heuristic function
+for the search. But the method for converting expert domain knowledge
+into a search heuristic seems non-trivial.
 
-Another algorithm called Near Sequence Memory, or NSM, has also shown to be effective in these kinds of environments \cite{McCallum95}. NSM works by looking for the closest past experiences to the most recent events in memory, which are likely when the agent was in a similar state, then determining which action taken in the past was most effective for reaching the goal using Q-learning. Sometimes, the agent will randomly explore instead.
+Other algorithms called Near Sequence Memory (NSM), Utile Suffix
+Memory (USM) and Noisy Utile Suffix Memory (NUSM) have been shown to
+be effective in these kinds of
+environments \cite{McCallumNSM95,McCallumUSM95,Shani2005}. These
+operate by looking for the closest past experiences to the most recent
+events in memory, which are likely when the agent was in a similar
+state, then determining which action taken in the past was most
+effective for reaching the goal.  Sometimes, the agent will randomly
+explore instead.
 
-Similarly to MaRz, NSM does not have a clear path to integrating expert knowledge. NSM expects the ``facts" it will use for deciding which actions to take in the future to be in the format of a chain of memories, while we would expect expert knowledge to be in the format of a set of declarative facts.
+Similarly to MaRz, these algorithms do not have a clear path to
+integrating expert knowledge. Each algoirthm the ``facts" it will use
+for deciding which actions to take in the future to be in the format
+of chains of memories.  A more convenient algorithm would expect
+expert knowledge to be in the format of a set of declarative facts.
 
-While it may be possible to modify these algorithms to work with knowledge engineering, we chose to not pursue this option. Instead, we opted to design an algorithm that generates and employs facts similarly to what an expert may provide, making the learned experience of the agent and the experience of an expert interchangeable. To this end, we will define a \textit{rule}, which records a known probabilistic pattern of cause and effect. This more naturally fits what expert knowledge may appear as. For example:
+We opted to design an algorithm that generates and employs facts
+similarly to what an expert may provide, making the learned experience
+of the agent and the experience of an expert interchangeable. To this
+end, we will define a \textit{rule}, which records a known
+probabilistic pattern of cause and effect. This more naturally fits
+what expert knowledge may appear as. For example:
+
 \begin{itemize}
 	\item Performing action $a$ will cause $x$.
 	\item If you just performed action $a_0$ and then you saw $x$, then you can perform action $a_1$ to complete the task.
@@ -261,14 +301,6 @@ All of these examples may be formatted as rules. We will formally define rules l
 %% both.  This research presents ARO, an initial step toward such an
 %% algorithm.
 
-\section{Environment}
-
-We will now formally classify the environment for ARO. We define the environment by a tuple $(M, G, O, f)$. The machine $M$ is a finite state machine with state set $S$, alphabet $\alpha$, and transition function $T$ such that the goal state $G$ is in $S$ and there is a path from every state in $S$ to $G$. The observation set $O$ is the set of possible observations (different sensor values) where $G \in O$ denotes the observation of reaching the goal state. The observation function $f: S \rightarrow O$ computes what is observed in any state where $f(s) = G$ if and only if $s = G$. 
-
-An agent in this environment is told $\alpha$ and $G$, but is otherwise provided no information about the environment. The agent is initialized in some unknown random state $s_0$. At any time-step $t$ when the agent is in state $s_t$, the agent will be told $f(s_t)$. If $s_t$ is not a goal state, the agent must provide an action $a_t \in \alpha$. The agent will then transition to $s_{t+1} = T(s_t, a_t)$. If instead $s_t$ is a goal state, the agent must provide any action, then it will be moved to non-goal state $s_{t+1}$ at random. This will continue until an fixed but unknown number of goals are reached. The objective of the agent is to minimize the total number of time steps.
-
-In the Blind FSM environment, $O = \{\epsilon, G\}$ and $f(s) = \epsilon$ for non-goal states. In the OSFSM environment, $O = \{0, 1, G\}$, with $0$ and $1$ denoting whether the state is even or odd, respectively, and $f(s)$ returns the parity of $s$ for non-goal states.
-
 \section{ARO Overview}
 
 We are now ready to present ARO, an algorithm designed for navigating environments with extreme state aliasing such as Blind FSM and OSFSM.
@@ -290,11 +322,33 @@ The three examples for rules given in the background section may now be formally
 	\item $*a_0, xa_1 \rightarrow G: 100\%$
 	\item $xa \rightarrow y: 50\%$ and $xa \rightarrow z: 50\%$
 \end{itemize}
-As we can see from the final example, it is often useful to consider the set of all rules with the same cause sequence. This lets us consider all possible outcomes from taking a particular action. We call such a set of rules a \textit{rule group}.
 
-We used a tree structure to store rules, but this choice does not effect functionality (CITE USM?). So rather than explain this tree, we merely define the function \scshape GetRule \normalfont that takes as inputs both a cause sequence and an effect then produces as an output the corresponding rule. We also define the function \scshape GetRuleGroup \normalfont that takes  a cause sequence as an input and produces the corresponding rule group as an output.
+As we can see from the final example, it is often useful to consider
+the set of all rules with the same cause sequence. This lets us
+consider all possible outcomes from taking a particular action. We
+call such a set of rules a \textit{rule group}.
 
-Since the agent does not have access to the underlying FSM, it cannot compute the probabilities for rules exactly. This leaves us with two choices for developing the rules: learned knowledge and expert knowledge. For learned knowledge, the agent estimates the probability using the rate at which the effect follows the cause sequence in episodic memory. For example, if $0b$ occurs $10$ times in memory and $0b,G$ occurs $3$ times in memory, then the agent would use the rule $$0b \rightarrow G: 30\%.$$ Expert knowledge can be used instead of this estimate if it is provided to the agent. \scshape GetRule \normalfont does not distinguish between the source of the rule when providing it to the agent.
+We used a tree structure to store rules, but this choice does not
+effect functionality in contrast to similar algorithms that use a
+tree-based data structure \cite{McCallumUSM95,Shani2005}. So rather
+than explain this tree, we merely define the function \scshape
+GetRule \normalfont that takes as inputs both a cause sequence and an
+effect then produces as an output the corresponding rule. We also
+define the function \scshape GetRuleGroup \normalfont that takes a
+cause sequence as an input and produces the corresponding rule group
+as an output.
+
+Since the agent does not have access to the underlying FSM, it cannot
+compute the probabilities for rules exactly. This leaves us with two
+choices for developing the rules: learned knowledge and expert
+knowledge. For learned knowledge, the agent estimates the probability
+using the rate at which the effect follows the cause sequence in
+episodic memory. For example, if $0b$ occurs $10$ times in memory and
+$0b,G$ occurs $3$ times in memory, then the agent would use the
+rule $$0b \rightarrow G: 30\%.$$ Expert knowledge can be used instead
+of this estimate if it is provided to the agent. \scshape
+GetRule \normalfont does not distinguish between the source of the
+rule when providing it to the agent.
 
 
 %There are multiple rules with the same cause sequence. For instance, both $1a \rightarrow 0: 3$ and $1a \rightarrow G: 2$ may be rules. By comparing all rules with the same cause sequence, the agent can compute the probability that any particular effect will occur. We will call this set of rules a ``rule group." We define the function called \scshape GetRuleGroup\normalfont(episodes), which takes an array of episodes and returns the corresponding rule group.
@@ -345,10 +399,44 @@ This algorithm also computes the move that will take the fewest number of steps 
 There are two aspects of this policy that are not yet explained. First, we cannot compute an expected value for a move we have never taken before. This case is dealt with in line \ref{line:heuristic} of the code with the \scshape GetHeuristic \normalfont function, which we have not yet defined. Second, there are multiple sequences the agent may pass into \scshape GetBestMove\normalfont. For instance, if the most recent episodes are $1a,0a$ and the last observation was $0$, the agent may call \scshape GetBestMove\normalfont($[]$, $0$), \scshape GetBestMove\normalfont($[0a]$, $0$), or \scshape GetBestMove\normalfont($[1a, 0a]$, $0$). Each sequence may produce a different recommendation, and the agent must choose which recommendation to follow. These are the corresponding topics of the next two sections.
 
 \subsection{Explore Heuristic}
+%Old version?
 %Let us first deal with the case where we have no rules in a rule group and we must find the expected value. This occurs if the agent has never observed the sequence of episodes corresponding to the rule group. Let $e = (o, a)$ be the last episode in the rule group cause sequence and $seq$ be the rest of the sequence. This situation is equivalently described as follows: the agent has never recorded episodes in the sequence $seq$, then observed $o$ and performed action $a$. Thus, taking action $a$ can be considered an "exploration" by the agent. We therefore need to decide the value of exploring in this environment, which is clearly a bandit problem. Specifically, this is a contextual bandit problem with $seq$ and $o$ forming the context and the arms being the actions in $\alpha$. However, in this context
-Let us first deal with the case where we must calculate an expected value for a rule group containing no rules. This can be equivalently stated as follows: ARO has never seen the episode sequence $episodes$ occur, then observed the observation $o$, and then performed some action $a$. Furthermore, no expert has provided knowledge on what they expect to occur in this scenario. Thus, taking action $a$ can be thought of as an ``exploration" by the agent. The agent must choose between exploring this new action and exploiting its existing knowledge to reach the goal. While the explore-exploit tradeoff is well studied under the context of the Mulit-Armed Bandit problem and has several known solutions, we may use existing knowledge of this scenario to make a more specific solution. (CITE USM: Exploring in these environments is notoriously difficult) 
 
-To compare the value of this exploration to other actions we have taken, we must decide the value of exploring in the units of expected value.  It is possible to find an estimate of the expected value by using the rule group corresponding to removing the first episode from $episodes$. However, repeating this process can lead to infinite depth recursion. Rather than creating a suitable base case to make the recursion finite, we instead attempt to estimate the value that this recursion will return. Let $p$ denote the probability of reaching the goal according to the $0$-deep rule $\rightarrow G : p$. We note that if we were to continue recursion infinitely, the probability of reaching the goal in any step should converge on $p$. If we estimate that this probability holds constant on every step, then the number of steps to goal follows a Geometric distribution with probability $p$. This gives an expected value of $\frac{1}{p}$. To prevent dividing by $0$, we add $1$ to the number of goals observed when calculating $p$. Hence, we can now define the heuristic function:
+Let us first deal with the case where we must calculate an expected
+value for a rule group containing no rules. This can be equivalently
+stated as follows: ARO has never seen the episode sequence $episodes$
+occur, then observed the observation $o$, and then performed some
+action $a$. Furthermore, no expert has provided knowledge on what they
+expect to occur in this scenario. Thus, taking action $a$ can be
+thought of as an ``exploration" by the agent. The agent must choose
+between exploring this new action and exploiting its existing
+knowledge to reach the goal.
+
+The explore-exploit tradeoff is well studied under the context of the
+Multi-Armed Bandit problems \cite{Berry85} and has several known
+solutions \cite{Sutton98,Kearns02,Brafman02}.  Research with regard to
+explore-exploit in environments with extreme perceptual aliasing is
+much more difficult.  A publication by a previous researcher in this
+area stated ``Efficient exploration with hidden state is an extremely
+difficult problem, and remains an area requiring
+work.'' \cite{McCallum95USM}
+
+To compare the value of this exploration to other actions we have
+taken, we must decide the value of exploring in the units of expected
+value.  It is possible to find an estimate of the expected value by
+using the rule group corresponding to removing the first episode from
+$episodes$. However, repeating this process can lead to infinite depth
+recursion. Rather than creating a suitable base case to make the
+recursion finite, we instead attempt to estimate the value that this
+recursion will return. Let $p$ denote the probability of reaching the
+goal according to the $0$-deep rule $\rightarrow G : p$. We note that
+if we were to continue recursion infinitely, the probability of
+reaching the goal in any step should converge on $p$. If we estimate
+that this probability holds constant on every step, then the number of
+steps to goal follows a Geometric distribution with probability
+$p$. This gives an expected value of $\frac{1}{p}$. To prevent
+dividing by $0$, we add $1$ to the number of goals observed when
+calculating $p$. Hence, we can now define the heuristic function:
 
 \begin{algorithmic}[-1]
 	
@@ -358,7 +446,24 @@ To compare the value of this exploration to other actions we have taken, we must
 	
 \end{algorithmic}
 
-As a benefit of this technique, we have derived a quantitative value of exploration without using hyperparameters, in contrast to traditional techniques such as $\epsilon$-greedy strategies (CITE). This fact makes this technique particularly suitable to online learning and artificial general intelligence problems where hyperparameter tuning is not desirable. Also of note is that $\frac{1}{p}$ nearly equals the average number of steps to goal over the lifetime of the agent (they are not equal because we must add one to the number of goals). (MENTION POKER?) This means that ARO's explore-exploit solution has an intuitive description: explore if the alternative is worse than average.
+As a benefit of this technique, we have derived a quantitative value
+of exploration without using hyperparameters, in contrast to
+traditional techniques cited above. This fact makes this technique
+particularly suitable to online learning and artificial general
+intelligence problems where hyperparameter tuning is not
+desirable. Also of note is that $\frac{1}{p}$ nearly equals the
+average number of steps to goal over the lifetime of the agent (they
+are not equal because we must add one to the number of goals). This
+means that ARO's explore-exploit solution has an intuitive
+description: explore if the alternative is worse than average.
+
+This intuitive idea appears in other contexts.  Notably, an algorithm
+called POKER has been applied to the multi-armed bandit problem where
+the agent is not able to test all the arms before a time horizon is
+reached \cite{Vermore05}.  In this context, the value of an arm is
+estimated based on the average value of other arms.
+
+
 
 \subsection{Sequence Selection}
 
@@ -402,7 +507,7 @@ Using these procedures, we can now fully define the policy of ARO. We define the
 
 To assess ARO, we compared its performance in the OSFSM environment to
 that of two other algorithms: MaRz \cite{Rodriguez17} and Nearest
-Sequence Memory \cite{McCallum95}. Since these agents cannot incorporate knowledge engineering no rules were provided for ARO \textit{a priori}. Since we would expect that being provided expert rules would improve performance, this data can be seen as a worst-case outcome for ARO.
+Sequence Memory \cite{McCallumNSM95}. Since these agents cannot incorporate knowledge engineering no rules were provided for ARO \textit{a priori}. Since we would expect that being provided expert rules would improve performance, this data can be seen as a worst-case outcome for ARO.
 
 There were a few modifications to the implementation of ARO from the specification to improve memory usage and run time. First, we discovered that there was no need to record a rule if a prefix of the cause sequence was unique. If the prefix occurs again, we may look back through memory to create the rule on the fly. This modification does not effect the behavior of ARO. Second, we cache the result of \scshape GetEV \normalfont and \scshape GetBestMove\normalfont after every goal, which dramatically improves computation time. This technically deviates from the specification because the value of \scshape GetHeuristic \normalfont is saved and not recomputed. Since $1/p$ trends downward as the agent learns more, this means that the agent undervalues explores compared to the specification. We found the overall effect on the agent to be small.
 
