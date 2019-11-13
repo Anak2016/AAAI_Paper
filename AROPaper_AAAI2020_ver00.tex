@@ -28,7 +28,9 @@
  \pdfinfo{
 /Title (ARO:  A Memory-Based Approach to Environments with State Aliasing)
 /Author (Ryan Regier, Owen Price, Alex Hadi, Zachary Faltersack and Andrew Nuxoll)
-} %Leave this	
+}
+
+%Leave this	
 % /Title ()
 % Put your actual complete title (no codes, scripts, shortcuts, or LaTeX commands) within the parentheses in mixed case
 % Leave the space between \Title and the beginning parenthesis alone
@@ -94,12 +96,12 @@
 % directly follow a colon or long dash
 
 
-\author{Author's Names Omitted for Peer Review
-%% \author{Ryan Regier, Owen Price, Alex Hadi, Zachary Faltersack and Andrew Nuxoll \\ 
-%% University of Portland\\ %If you have multiple authors and multiple affiliations
-%% 5000 North Willamette Boulevard\\
-%% Portland, Oregon 97203\\
-%% engineering@up.edu % email address must be in roman text type, not monospace or sans serif
+%%\author{Author's Names Omitted for Peer Review
+\author{Ryan Regier, Owen Price, Alex Hadi, Zachary Faltersack and Andrew Nuxoll \\ 
+University of Portland\\ %If you have multiple authors and multiple affiliations
+5000 North Willamette Boulevard\\
+Portland, Oregon 97203\\
+engineering@up.edu % email address must be in roman text type, not monospace or sans serif
 }
 
 
@@ -114,10 +116,10 @@ is necessary to store both learned and engineered knowledge in a
 common format that can be used by an agent to make intelligent
 decisions. Such integration is much more useful in data sparse
 environments, where traditional machine learning techniques fail.  In
-this paper, we will define a data structure known as a rule that
-stores patterns of cause and effect. These rules can easily embed
-expert knowledge on causal relationships. We will then present ARO, an
-algorithm for learning rules and using rules to navigate data sparse
+this paper, we will define a rule structure that stores patterns of
+cause and effect. These rules can easily embed expert knowledge on
+causal relationships. We will then present ARO, an algorithm for
+learning rules and using rules to navigate data sparse
 environments. Our results show that ARO is more effective than other
 known solutions to this problem. ARO has the additional advantages
 that it more easily integrates with knowledge engineering techniques
@@ -249,10 +251,14 @@ what expert knowledge may appear as. For example:
 	\item If you just performed action $a_0$ and then you saw $x$, then you can perform action $a_1$ to complete the task.
 	\item If you see $x$, then performing action $a$ will cause $y$ or $z$ to occur at random.
 \end{itemize}
-All of these examples may be formatted as rules. We will formally define rules later in this paper, but for now it is imperative to more formally define the environments.
+
+All of these examples may be formatted as rules. We will formally
+define rules later in this paper, but for now it is imperative to more
+formally define the environments.
 
 
-%%% Re-add this?
+%%% Re-add this? <-- Nuxoll says no.  The paper has drifted too far
+%%% from this, imo.
 
 %% For example, consider the state machine in
 %% Figure \ref{fig1}.
@@ -408,7 +414,20 @@ Given a sequence of previous episodes that have occurred and an observation, we 
 This algorithm also computes the move that will take the fewest number of steps to reach the goal on average, stored in the $BestMove$ variable. Let \scshape GetBestMove \normalfont be a function that, when given the same inputs as \scshape EV\normalfont, will return the value of the $BestMove$ variable. The action returned by \scshape GetBestMove \normalfont will minimize the expected number of steps to the goal based on what the agent has learned about the environment, so we would expect this would minimize the average number of steps to the goal  over the long term. ARO uses this function to determine what action to make.
 %The agent may call this function, supplying the most recent observation and an episode sequence ending at its most recent episode or an empty sequence. Thus, performing the action $BestMove$ can be used as a policy for the agent, and should minimize the average steps to goal based on what the agent has learned about the environment. In fact, this is exactly what ARO does. 
 
-There are two aspects of this policy that are not yet explained. First, we cannot compute an expected value for a move we have never taken before. This case is dealt with in line \ref{line:heuristic} of the code with the \scshape GetHeuristic \normalfont function, which we have not yet defined. Second, there are multiple sequences the agent may pass into \scshape GetBestMove\normalfont. For instance, if the most recent episodes are $1a,0a$ and the last observation was $0$, the agent may call \scshape GetBestMove\normalfont($[]$, $0$), \scshape GetBestMove\normalfont($[0a]$, $0$), or \scshape GetBestMove\normalfont($[1a, 0a]$, $0$). Each sequence may produce a different recommendation, and the agent must choose which recommendation to follow. These are the corresponding topics of the next two sections.
+There are two aspects of this policy that are not yet
+explained. First, we cannot compute an expected value for a move we
+have never taken before. This case is dealt with in
+line \ref{line:heuristic} of the code with the \scshape
+GetHeuristic \normalfont function, which we will define below. Second,
+there are multiple sequences the agent may pass into \scshape
+GetBestMove\normalfont. For instance, if the most recent episodes are
+$1a,0a$ and the last observation was $0$, the agent may call \scshape
+GetBestMove\normalfont($[]$, $0$), \scshape
+GetBestMove\normalfont($[0a]$, $0$), or \scshape
+GetBestMove\normalfont($[1a, 0a]$, $0$). Each sequence may produce a
+different recommendation, and the agent must choose which
+recommendation to follow. These are the corresponding topics of the
+next two sections.
 
 \subsection{Explore Heuristic}
 %Old version?
@@ -553,19 +572,34 @@ ARO learns significantly faster than NSM and converges at a policy with nearly i
 As shown, ARO is able to learn near optimal behavior much more rapidly
 than the other algorithms.  These results were consistent across a
 variety of different machines ranging from 10 to 90 states and
-alphabets of 2 to 9 letters. (Note: some data for NSM was still being gathered at the time of publication)
-
-***TODO:  fill in [min] and [max] above.
+alphabets of 2 to 9 letters. (Note: some data for NSM was still being
+gathered at the time of paper submission.)
 
 \section{Future Work}
 
 This work demonstrates that ARO is effective in two specific
 environments with extreme state aliasing. Other tests have indicated that ARO can handle other deterministic environments as well, including environments with little state aliasing.
 
-The most pressing concern is that it is not obvious how best to generalize
-ARO to accommodate a stochastic observation function, such as a function that returns $0$ or $1$ at random. With a random observation function, storing all possible rules can quickly become infeasible in terms of memory because the number of rules with a given depth is exponential and unbounded. This is unlike a deterministic observation function, where the number of rules with a given depth is no greater than the total number of states of the FSM - one rule corresponding to each possible initial state of the agent at the beginning of the cause sequence. Furthermore, ARO has no means of recognizing that the observations it receives are random, so it uses rules trying to predict the value of random observations as a basis to try to reach the goal. These factors cause ARO to perform poorly.
+The most pressing concern is that it is not obvious how best to
+generalize ARO to accommodate a stochastic observation function, such
+as a function that returns $0$ or $1$ at random. With a random
+observation function, storing all possible rules can quickly become
+infeasible in terms of memory because the number of rules with a given
+depth is exponential and unbounded. This is unlike a deterministic
+observation function, where the number of rules with a given depth is
+no greater than the total number of states of the FSM - one rule
+corresponding to each possible initial state of the agent at the
+beginning of the cause sequence. Furthermore, ARO has no means of
+recognizing that the observations it receives are random, so it uses
+rules trying to predict the value of random observations as a basis to
+try to reach the goal. These factors cause ARO to perform poorly.
 
- Another potential enhancement is to allow ARO to learn other kinds of rules with more general causes or effects. For example, in our previous examples of rules we used a wildcard character for a rule. While this rule can be provided by an expert, ARO cannot learn such a rule and must instead learn a similar rule for every possible value of the wildcard.
+Another potential enhancement is to allow ARO to learn other kinds of
+rules with more general causes or effects. For example, in our
+previous examples of rules we used a wildcard character for a
+rule. While this rule can be provided by an expert, ARO cannot learn
+such a rule and must instead learn a similar rule for every possible
+value of the wildcard.
 
 ARO may also need to be adjusted to address environment with these
 properties:
@@ -575,13 +609,26 @@ properties:
 \item a dynamic transition table
 \end{itemize}
 
+ARO's applicability extends beyond knowledge integration.  As an
+online algorithm, ARO can take advantage of knowledge immediately and
+therefore could be step towards ways in which humans and artificially
+intelligent agents work collaboratively on a given task in real time.
+
+In addition, the development of ARO builds upon previous research to
+explore the application of episodic memory for artificial general
+intelligence \cite{Rodriguez17}.  ARO, therefore, is likely equally
+applicable in that context.  In particular, the lack of
+hyperparameters means that it can be applied in a general context and
+does not need to be re-tuned each time it is used in a new
+environment.
+
+
+
 \begin{quote}
 \begin{small}
 \bibliographystyle{aaai}
 \bibliography{aro}
 \end{small}
 \end{quote}
-
-
 
 \end{document}
