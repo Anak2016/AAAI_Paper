@@ -321,16 +321,47 @@ formally define the environments.
 
 \section{ARO Overview}
 
-We are now ready to present ARO, an algorithm designed for navigating environments with extreme state aliasing such as Blind FSM and OSFSM.
-%ARO can be described in three parts: a data structure to store episodic memories and to describe what is currently known about the position of the agent in the machine, a method to estimate the value of exploring vs exploiting based on the data gathered, and an algorithm to use the data structure and the explore-exploit heuristic to decide what action to perform.
+We are now ready to present ARO, an algorithm designed for navigating
+environments with extreme state aliasing such as Blind FSM and OSFSM.
+
+%ARO can be described in three parts: a data structure to store
+%episodic memories and to describe what is currently known about the
+%position of the agent in the machine, a method to estimate the value
+%of exploring vs exploiting based on the data gathered, and an
+%algorithm to use the data structure and the explore-exploit heuristic
+%to decide what action to perform.
 
 \subsection{Rules}
 
-ARO stores previous events in units called ``episodes." Each episode consists of the tuple $(o, a)$, where $o$ is the observation $f(s)$ and $a$ is the action taken after the observation. In the OSFSM environment, an example episode may be $(1,b)$. In this episode, the agent was in an odd-numbered state and took action $b$. When the agent reaches the goal, the action is irrelevant, so we denote such an episode simply with ``G." In non-goal episodes, we concatenate the tuple for brevity, so the above episode would be denoted ``1b". 
+ARO stores previous events in units called ``episodes." Each episode
+consists of the tuple $(o, a)$, where $o$ is the observation $f(s)$
+and $a$ is the action taken after the observation. In the OSFSM
+environment, an example episode may be $(1,b)$. In this episode, the
+agent was in an odd-numbered state and took action $b$. When the agent
+reaches the goal, the action is irrelevant, so we denote such an
+episode simply with ``G." In non-goal episodes, we concatenate the
+tuple for brevity, so the above episode would be denoted ``1b".
 
-Using these episodic memories, the agent records patterns of cause and effect in a structure called a \textit{rule}. Rules are denoted like this example: $$1a \rightarrow 1: 23\%.$$ This rule states that being in an odd state and taking action $a$ ``caused" an odd state $23\%$ of the time. The effect part of a rule is always in this same style, but causes may be more complex. For example, consider this rule: $$0b,1a \rightarrow 1: 6\%.$$ 
-%This rules says that the agent taking action $a$ while being in an odd state that was reached by taking a $b$ from an even state has caused an odd state $6\%$ of the time. In general, a rule consists of a sequence of episodes as the ``cause", an observation $o \in O$ as an ``effect," and the probability that the cause produces the stated effect. 
-This rule states that being in an even state and performing action $b$, then reaching an odd state and performing action $a$ has caused the agent to reach an odd state $6\%$ of the time.
+
+Using these episodic memories, the agent records patterns of cause and
+effect in a structure called a \textit{rule}. Rules are denoted like
+this example: $$1a \rightarrow 1: 23\%.$$ This rule states that being
+in an odd state and taking action $a$ ``caused" an odd state $23\%$ of
+the time. The effect part of a rule is always in this same style, but
+causes may be more complex. For example, consider this
+rule: $$0b,1a \rightarrow 1: 6\%.$$
+
+%This rules says that the agent taking action $a$ while being in an
+%odd state that was reached by taking a $b$ from an even state has
+%caused an odd state $6\%$ of the time. In general, a rule consists of
+%a sequence of episodes as the ``cause", an observation $o \in O$ as
+%an ``effect," and the probability that the cause produces the stated
+%effect.
+
+This rule states that being in an even state and performing action
+$b$, then reaching an odd state and performing action $a$ has caused
+the agent to reach an odd state $6\%$ of the time.
+
 
 More formally, a rule consists of three parts: a sequence of episodes of any length known as the \emph{cause sequence}, an observation known as the \emph{effect}, and a probability. The cause sequence of a rule may be empty, which can be interpreted as the probability  that transitioning to a new state causes a particular observation. The number of episodes in the cause sequence of a rule is called the \textit{depth} of a rule.
 
@@ -498,17 +529,53 @@ estimated based on the average value of other arms.
 
 \subsection{Sequence Selection}
 
-The agent may now calculate the best move given a sequence of recent episodes. However, different sized sequences may produce different results. If a large sequence is used, the episode sequence is more likely to be rare in memory, producing unreliable predictions. Furthermore, a long sequence may contain superfluous information, which would imply that a more common and shorter sequence would be a sufficient state identifier. With a small sequence, the episode sequence may be too common for the agent to know where it is in the machine or to determine if it is going in a loop, which could cause undesirable behavior such as infinite looping. To resolve this dilemma, ARO uses a greedy strategy of taking the episode sequence that produces the smallest expected value. Hence, if the agent has knowledge of a fast path to the goal, it will take it regardless of sequence length. We expect this strategy to help reduce regret.
+The agent may now calculate the best move given a sequence of recent
+episodes. However, different sized sequences may produce different
+results. If a large sequence is used, the episode sequence is more
+likely to be rare in memory, producing unreliable
+predictions. Furthermore, a long sequence may contain superfluous
+information, which would imply that a more common and shorter sequence
+would be a sufficient state identifier. With a small sequence, the
+episode sequence may be too common for the agent to know where it is
+in the machine or to determine if it is going in a loop, which could
+cause undesirable behavior such as infinite looping. To resolve this
+dilemma, ARO uses a greedy strategy of taking the episode sequence
+that produces the smallest expected value. Hence, if the agent has
+knowledge of a fast path to the goal, it will take it regardless of
+sequence length. We expect this strategy to help reduce regret.
 
-This alone, however, is not sufficient to prevent loops. At timestep $t$, say the sequence $seq$ has the property \scshape EV\normalfont($seq$) $ = x$, where $x$ is the minimal expected value. Hence, the action \scshape GetBestMove\normalfont($seq$) is performed. Let $nextSeq$ be $seq$ appended by the new episode generated by performing that action. We found that the expected value of $nextSeq$ in timestep $t+ 1$ can be higher than $x$, usually from an improbable event informing the agent that it is farther from the goal than the average case. When this occurred, we observed that the agent would often switch to a shorter sequence with a better expected value for a move recommendation. However, this is not because the agent actually knows a faster path to goal, but because the agent effectively ``forgets" that it is in a poor position. After the agent has performed a few moves, it will again learn that it is in a poor position and switch to a shorter sequence for a recommendation. By repeating this behavior, the agent gets stuck in a loop. 
+This alone, however, is not sufficient to prevent loops. At timestep
+$t$, say the sequence $seq$ has the property \scshape
+EV\normalfont($seq$) $ = x$, where $x$ is the minimal expected
+value. Hence, the action \scshape GetBestMove\normalfont($seq$) is
+performed. Let $nextSeq$ be $seq$ appended by the new episode
+generated by performing that action. We found that the expected value
+of $nextSeq$ in timestep $t+ 1$ can be higher than $x$, usually from
+an improbable event informing the agent that it is farther from the
+goal than the average case. When this occurred, we observed that the
+agent would often switch to a shorter sequence with a better expected
+value for a move recommendation. However, this is not because the
+agent actually knows a faster path to goal, but because the agent
+effectively ``forgets" that it is in a poor position. After the agent
+has performed a few moves, it will again learn that it is in a poor
+position and switch to a shorter sequence for a recommendation. By
+repeating this behavior, the agent gets stuck in a loop.
 
-To deal with this issue, we force the agent to deal with the bad event by not letting the agent switch to a different sequence for a move recommendation. In other words, if $seq$ was used to find  the best move at timestep $t$, then $nextSeq$ must be used to find the best move at timestep $t+1$. There are two exceptions to this rule:
+To deal with this issue, we force the agent to deal with the bad event
+by not letting the agent switch to a different sequence for a move
+recommendation. In other words, if $seq$ was used to find the best
+move at timestep $t$, then $nextSeq$ must be used to find the best
+move at timestep $t+1$. There are two exceptions to this rule:
 \begin{enumerate}
 	\item The agent observes a goal. Because the agent is moved randomly upon reaching the goal state, there is no information to be gained by using a sequence with a goal observation.
 	\item $nextSeq$ is unique. This implies the agent is in a novel scenario and the current sequence can provide no data to guide the agent.
 \end{enumerate}
 
-Using these procedures, we can now fully define the policy of ARO. We define the global variable $prevSequence$, which stores the sequence from the previous time step used to determine which action to take, and is initialized to the empty sequence. ARO's policy is then described in the following algorithm.
+Using these procedures, we can now fully define the policy of ARO. We
+define the global variable $prevSequence$, which stores the sequence
+from the previous time step used to determine which action to take,
+and is initialized to the empty sequence. ARO's policy is then
+described in the following algorithm.
 
 \begin{algorithmic}
 	\Function{Policy}{Observation $o$}
@@ -578,7 +645,10 @@ gathered at the time of paper submission.)
 \section{Future Work}
 
 This work demonstrates that ARO is effective in two specific
-environments with extreme state aliasing. Other tests have indicated that ARO can handle other deterministic environments as well, including environments with little state aliasing.
+environments with extreme state aliasing. Other tests (not in this
+paper) have indicated that ARO can handle other deterministic
+environments as well, including environments with little state
+aliasing.
 
 The most pressing concern is that it is not obvious how best to
 generalize ARO to accommodate a stochastic observation function, such
@@ -607,6 +677,7 @@ properties:
 \item a reward function rather than a single goal state
 \item a non-deterministic FSM
 \item a dynamic transition table
+\item continuously valued sensors
 \end{itemize}
 
 ARO's applicability extends beyond knowledge integration.  As an
