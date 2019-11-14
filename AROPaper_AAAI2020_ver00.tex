@@ -115,15 +115,15 @@ In order to integrate machine learning and knowledge engineering, it
 is necessary to store both learned and engineered knowledge in a
 common format that can be used by an agent to make intelligent
 decisions. Such integration is much more useful in data sparse
-environments, where traditional machine learning techniques fail.  In
-this paper, we will define a rule structure that stores patterns of
-cause and effect. These rules can easily embed expert knowledge on
-causal relationships. We will then present ARO, an algorithm for
-learning rules and using rules to navigate data sparse
-environments. Our results show that ARO is more effective than other
-known solutions to this problem. ARO has the additional advantages
-that it more easily integrates with knowledge engineering techniques
-and uses no hyperparameters.
+environments, where traditional machine learning techniques fail.  To
+this end, we define a rule structure that stores patterns of cause and
+effect. These rules can easily embed expert knowledge on causal
+relationships. We will then present ARO, an algorithm for learning and
+using rules to navigate data sparse environments. Our results show
+that ARO is more effective than other known solutions to this
+problem. ARO has the additional advantages that it more easily
+integrates with knowledge engineering techniques and uses no
+hyperparameters.
 
 \end{abstract}
 
@@ -137,8 +137,8 @@ and uses no hyperparameters.
 In environments with an abundance of data, machine learning agents are
 effective at learning patterns, even those not known by experts in the
 domain. However, in data-sparse environments, traditional machine
-learning agents fail \cite{Chrisman92}. We find that this kind of
-environment would be ideal for the integration of knowledge
+learning agents fail \cite{Chrisman92}. We believe that this kind of
+environment could be ideal for the integration of knowledge
 engineering with machine learning techniques. One such environment is
 the Blind Finite State Machine environment.  In this environment, the
 agent navigates a finite state machine (FSM) \cite{Hopcroft06} to
@@ -165,37 +165,43 @@ Specifically, the agent is \underline{not} aware of the following:
 \item the transition table of the FSM
 \end{itemize}
 
-The agent repeatedly performs the task in a given FSM and its success
+\noindent The agent repeatedly performs the task in a given FSM and its success
 is measured by how many states it takes to reach the goal at each
-iteration.  Experiments with human subjects (not published) indicate
-that this task is exceptionally difficult for humans.
+iteration.  
 
-In such an environment, a traditional machine learning agent is unable
-to learn effective behavior.  Such an agent attempts to learn the
-action that yields the maximum expected utility for each possible
-sensory input.  However, in this environment, all states (except the
-goal state) appear identical to the agent. Furthermore, there is no reward function to indicate to the agent that it has performed particularly poor actions such as looping. So, the agent can only learn a single ``best'' action to take in any non-goal state.
+In such an environment, a traditional machine learning agent, e.g.,
+Q-Learning \cite{Sutton98}, is unable to learn effective behavior.
+Such an agent attempts to learn the action that yields the maximum
+expected utility for each possible sensory input.  However, in this
+environment, all states (except the goal state) appear identical to
+the agent. Furthermore, there is no reward function to indicate to the
+agent that it has performed particularly poor actions such as
+looping. So, the agent can only learn a single ``best'' action to take
+in any non-goal state.
 
 The situation changes once the agent is given additional sensors
 beyond the goal sensor.  Consider an environment like Blind FSM but
 the agent also has a binary sensor that tells it when it is currently
-in an odd state or an even state.  We shall henceforth refer to this
-as the OSFSM (Odd-Sensor Finite State Machine) environment. Traditional machine learning algorithms still perform poorly in OSFSM since they can still only ever distinguish three
-states.  However, as more and more sensors are provided a traditional
-machine learning algorithm becomes more and more effective.  Thus,
-there is a continuum from complete state aliasing (e.g., the Blind FSM
-environment) to a fully observable environment.
+in an odd-numbered state or an even-numbered state (presuming the
+states were arbitrarily enumerated).  We shall henceforth refer to
+this as the OSFSM (Odd-Sensor Finite State Machine)
+environment. Traditional machine learning algorithms still perform
+poorly in OSFSM since they can only distinguish three categories
+of states: odd-numbered, even-numbered or the goal.  However, as more and
+more sensors are provided a traditional machine learning algorithm
+becomes more and more effective.  Thus, there is a continuum from
+complete state aliasing (e.g., the Blind FSM environment) to a fully
+observable environment.
 
 To be successful in the Blind FSM or OSFSM environments, an agent must map
-\textit{sequences of experiences} to actions. An experience, in this case, is in this
-case as the agent's sensory input and the action it selected.  For
-example, the agent can learn that if it takes actions $a_1, a_2, ...,
-a_n$ in sequence and does not reach the goal then it can subsequently
-reach the goal in a single step by taking action $a^*$.  Furthermore,
-the agent can learn that certain sequences of actions have more
-utility than others regardless of what non-goal state it is currently
-at. In effect, the agent must de-alias states by using its recent
-memories as an identifier.
+\textit{sequences of experiences} to actions. An experience, in this case,
+is the agent's sensory input and the action it selected.  For
+example, the agent could learn that if it takes actions $a_1, a_2, ..., a_n$ in
+sequence and does not reach the goal then it can subsequently reach the goal in
+a single step by taking action $a^*$.  Furthermore, the agent could learn that
+certain sequences of actions have more utility than others regardless of what
+non-goal state it is currently at. In effect, the agent must de-alias states by
+using its recent memories as an identifier.
 
 We expect that the agent would need a significant amount of experience
 in order to achieve this de-aliasing. If the agent visits the same
@@ -216,12 +222,10 @@ sequence of actions that causes the agent to reach the goal from any
 non-goal state, and such a sequence must always exist in an FSM where every state has a path to goal.
 
 However, MaRz cannot incorporate observations into its algorithm,
-making it particularly narrow in scope. Furthermore, our tests
-indicate that MaRz performance begins to break down in very large
-state machines. Finally, the best candidate we see for using knowledge
-engineering in the MaRz algorithm is through the heuristic function
-for the search. But the method for converting expert domain knowledge
-into a search heuristic seems non-trivial.
+limiting its scope. Furthermore, the best candidate we see for using
+knowledge engineering in the MaRz algorithm is through the heuristic
+function for the search. But the method for converting expert domain
+knowledge into a search heuristic seems non-trivial.
 
 Other algorithms called Near Sequence Memory (NSM), Utile Suffix
 Memory (USM) and Noisy Utile Suffix Memory (NUSM) have been shown to
@@ -234,12 +238,12 @@ effective for reaching the goal.  Sometimes, the agent will randomly
 explore instead.
 
 Similarly to MaRz, these algorithms do not have a clear path to
-integrating expert knowledge. Each algoirthm the ``facts" it will use
+integrating expert knowledge. Each algorithm the ``facts" it will use
 for deciding which actions to take in the future to be in the format
 of chains of memories.  A more convenient algorithm would expect
 expert knowledge to be in the format of a set of declarative facts.
 
-We opted to design an algorithm that generates and employs facts
+In contrast to these other algorithms, ARO generates and employs facts
 similarly to what an expert may provide, making the learned experience
 of the agent and the experience of an expert interchangeable. To this
 end, we will define a \textit{rule}, which records a known
@@ -319,6 +323,38 @@ formally define the environments.
 %% both.  This research presents ARO, an initial step toward such an
 %% algorithm.
 
+\section{Environment}
+
+We will now formally classify the environment for ARO. We define the
+environment by a tuple $(M, G, O, f)$. The machine $M$ is a finite
+state machine with state set $S$, alphabet $\alpha$, and transition
+function $T$ such that the goal state $G$ is in $S$ and there is a
+path from every state in $S$ to $G$. The observation set $O$ is the
+set of possible observations (different sensor values) where $G \in O$
+denotes the observation of reaching the goal state. The observation
+function $f: S \rightarrow O$ computes what is observed in any state
+where $f(s) = G$ if and only if $s = G$.
+
+An agent in this environment is told $\alpha$ and $G$, but is
+otherwise provided no information about the environment. The agent is
+initialized in some unknown random state $s_0$. At any time-step $t$
+when the agent is in state $s_t$, the agent will be told $f(s_t)$. If
+$s_t$ is not a goal state, the agent must provide an action
+$a_t \in \alpha$. The agent will then transition to $s_{t+1} = T(s_t,
+a_t)$. If instead $s_t$ is a goal state, the agent must provide any
+action, then it will be moved to non-goal state $s_{t+1}$ at
+random. This will continue until an fixed but unknown number of goals
+are reached. The objective of the agent is to minimize the total
+number of time steps.
+
+In the Blind FSM environment, $O = \{\epsilon, G\}$ and $f(s)
+= \epsilon$ for non-goal states. In the OSFSM environment, $O = \{0,
+1, G\}$, with $0$ and $1$ denoting whether the state is even or odd,
+respectively, and $f(s)$ returns the parity of $s$ for non-goal
+states.
+
+
+
 \section{ARO Overview}
 
 We are now ready to present ARO, an algorithm designed for navigating
@@ -331,9 +367,7 @@ environments with extreme state aliasing such as Blind FSM and OSFSM.
 %algorithm to use the data structure and the explore-exploit heuristic
 %to decide what action to perform.
 
-\subsection{Rules}
-
-ARO stores previous events in units called ``episodes." Each episode
+ARO stores previous events in units called \textit{episodes}. Each episode
 consists of the tuple $(o, a)$, where $o$ is the observation $f(s)$
 and $a$ is the action taken after the observation. In the OSFSM
 environment, an example episode may be $(1,b)$. In this episode, the
@@ -343,11 +377,13 @@ episode simply with ``G." In non-goal episodes, we concatenate the
 tuple for brevity, so the above episode would be denoted ``1b".
 
 
-Using these episodic memories, the agent records patterns of cause and
-effect in a structure called a \textit{rule}. Rules are denoted like
-this example: $$1a \rightarrow 1: 23\%.$$ This rule states that being
-in an odd state and taking action $a$ ``caused" an odd state $23\%$ of
-the time. The effect part of a rule is always in this same style, but
+\subsection{Rules}
+
+Using these episodes, the agent records patterns of cause and effect
+in a structure called a \textit{rule}. Rules are denoted like this
+example: $$1a \rightarrow 1: 23\%.$$ This rule states that being in an
+odd state and taking action $a$ ``caused" an odd state $23\%$ of the
+time. The effect part of a rule is always in this same style, but
 causes may be more complex. For example, consider this
 rule: $$0b,1a \rightarrow 1: 6\%.$$
 
@@ -391,8 +427,8 @@ Since the agent does not have access to the underlying FSM, it cannot
 compute the probabilities for rules exactly. This leaves us with two
 choices for developing the rules: learned knowledge and expert
 knowledge. For learned knowledge, the agent estimates the probability
-using the rate at which the effect follows the cause sequence in
-episodic memory. For example, if $0b$ occurs $10$ times in memory and
+using the rate at which the effect follows the cause sequence in its
+episode history. For example, if $0b$ occurs $10$ times in memory and
 $0b,G$ occurs $3$ times in memory, then the agent would use the
 rule $$0b \rightarrow G: 30\%.$$ Expert knowledge can be used instead
 of this estimate if it is provided to the agent. \scshape
@@ -404,11 +440,18 @@ rule when providing it to the agent.
 
 %For a given sequence of episodes, many rule groups apply. For example, the sequence $1a,0a,1b$ has 4 rule groups apply: the group for the full sequence, the $0a,1b$ group, the $1b$ group, and the group for the empty sequence. Each will produce different probabilities of what will be observed next. The probabilities from the high-depth groups will be less accurate due to having less data, but can describe more sophisticated patterns than low-depth groups. The array of rule groups that currently apply is called ``current."
 
-Now that we have a method for storing patterns of cause and effect, we can use this information to predict future outcomes and find the optimal move.
+Now that we have a method for storing patterns of cause and effect, we
+can use this information to predict future outcomes and find the
+move that minimizes the expected number of steps to goal.
 
 \subsection{Expected Value}
 
-Given a sequence of previous episodes that have occurred and an observation, we can recursively compute the expected number of moves it will take to reach the goal. This is computed under the assumption that at each choice the agent may have in the future, it will make the best possible move. The algorithm is below.
+Given a sequence of previous episodes that have occurred and an
+observation, we can recursively compute the expected number of moves
+it will take to reach the goal. This is computed under the assumption
+that at each choice the agent may have in the future, it will make the
+best possible move. The algorithm is below.  (Note:
+the \scshape GetHeuristic \normalfont function will be defined later in the paper.)
 
 
 \algrenewcommand\algorithmicindent{1.25em}
@@ -421,7 +464,7 @@ Given a sequence of previous episodes that have occurred and an observation, we 
 			\State Let $next = (o, a)$ be a new episode.
 			\State Let $nextSeq$ be $episodes$ appended by $next$
 			\State $nextGroup =$ \Call{GetRuleGroup}{$nextSeq$} % Note: This looks awful because LaTeX spreads out spacing. This will need the full page to loook correct
-			\If{$nextGroup$ is empty}
+			\If{$nextGroup$ is empty}  \hspace{35pt} // base case
 				\State $Sum = $ \Call{GetHeuristic}{~} \label{line:heuristic}
 			\EndIf
 			\For{$rule$ in $nextGroup$}
@@ -442,7 +485,7 @@ Given a sequence of previous episodes that have occurred and an observation, we 
 	\EndFunction
 \end{algorithmic}
 
-This algorithm also computes the move that will take the fewest number of steps to reach the goal on average, stored in the $BestMove$ variable. Let \scshape GetBestMove \normalfont be a function that, when given the same inputs as \scshape EV\normalfont, will return the value of the $BestMove$ variable. The action returned by \scshape GetBestMove \normalfont will minimize the expected number of steps to the goal based on what the agent has learned about the environment, so we would expect this would minimize the average number of steps to the goal  over the long term. ARO uses this function to determine what action to make.
+This algorithm also computes the move it expects will take the fewest number of steps to reach the goal on average, stored in the $BestMove$ variable. Let \scshape GetBestMove \normalfont be a function that, when given the same inputs as \scshape EV\normalfont, will return the value of the $BestMove$ variable. The action returned by \scshape GetBestMove \normalfont will minimize the expected number of steps to the goal based on what the agent has learned about the environment, so we would expect this would minimize the average number of steps to the goal  over the long term. ARO uses this function to determine what action to make.
 %The agent may call this function, supplying the most recent observation and an episode sequence ending at its most recent episode or an empty sequence. Thus, performing the action $BestMove$ can be used as a policy for the agent, and should minimize the average steps to goal based on what the agent has learned about the environment. In fact, this is exactly what ARO does. 
 
 There are two aspects of this policy that are not yet
@@ -476,12 +519,12 @@ knowledge to reach the goal.
 
 The explore-exploit tradeoff is well studied under the context of the
 Multi-Armed Bandit problems \cite{Berry85} and has several known
-solutions \cite{Sutton98,Kearns02,Brafman02}.  Research with regard to
-explore-exploit in environments with extreme perceptual aliasing is
-much more difficult.  A publication by a previous researcher in this
-area stated ``Efficient exploration with hidden state is an extremely
-difficult problem, and remains an area requiring
-work.'' \cite{McCallumUSM95}
+solutions \cite{Sutton98,Kearns02,Brafman02}.  However, these
+algorithms are not applicable because they assume that the agent
+always recognizes the identity of the state it has reached.  Research
+with regard to explore-exploit in environments with extreme perceptual
+aliasing is more difficult.  Lacking an established explore-exploit
+algorithm, ARO takes a simple approach that seems effective.
 
 To compare the value of this exploration to other actions we have
 taken, we must decide the value of exploring in the units of expected
@@ -510,8 +553,8 @@ calculating $p$. Hence, we can now define the heuristic function:
 
 As a benefit of this technique, we have derived a quantitative value
 of exploration without using hyperparameters, in contrast to
-traditional techniques cited above. This fact makes this technique
-particularly suitable to online learning and artificial general
+traditional techniques \cite{Sutton98,Kearns02,Brafman02}. Thus, this
+is particularly suitable to online learning and artificial general
 intelligence problems where hyperparameter tuning is not
 desirable. Also of note is that $\frac{1}{p}$ nearly equals the
 average number of steps to goal over the lifetime of the agent (they
@@ -542,7 +585,7 @@ cause undesirable behavior such as infinite looping. To resolve this
 dilemma, ARO uses a greedy strategy of taking the episode sequence
 that produces the smallest expected value. Hence, if the agent has
 knowledge of a fast path to the goal, it will take it regardless of
-sequence length. We expect this strategy to help reduce regret.
+sequence length.
 
 This alone, however, is not sufficient to prevent loops. At timestep
 $t$, say the sequence $seq$ has the property \scshape
@@ -572,28 +615,26 @@ move at timestep $t+1$. There are two exceptions to this rule:
 \end{enumerate}
 
 Using these procedures, we can now fully define the policy of ARO. We
-define the global variable $prevSequence$, which stores the sequence
+define the global variable $prevSeq$, which stores the sequence
 from the previous time step used to determine which action to take,
 and is initialized to the empty sequence. ARO's policy is then
 described in the following algorithm.
 
-\begin{algorithmic}
+\begin{algorithmic}[1]
 	\Function{Policy}{Observation $o$}
 		\If{$o = G$}
-			\State Set $prevSequence$ to the empty sequence.
+			\State Set $prevSeq$ to the empty sequence.
 			\State \Return $\alpha$[0]
 		\EndIf
 		\State Let $e$ be the last episode.
 		\State Let $seq$ be $prevSeq$ appended by $e$.
-		\State Let $f$ be the frequency of $seq$ in episodic memory
+		\State Let $f$ be the frequency of $seq$ in episode history
 		\If{$f = 1$ or $seq$ contains the episode $G$}
 			\State Set $prevSeq$ to the sequence of recent episodes such that \Call{EV}{$prevSeq$, $o$} is minimized.
-			\State \Return \Call{GetBestMove}{$prevSeq$}
 		\Else
 			\State $prevSeq = seq$
-			\State \Return \Call{GetBestMove}{$prevSeq$}
 		\EndIf
-		
+        \State \Return \Call{GetBestMove}{$prevSeq$}
 	\EndFunction
 	
 \end{algorithmic}
@@ -607,14 +648,26 @@ To assess ARO, we compared its performance in the OSFSM environment to
 that of two other algorithms: MaRz \cite{Rodriguez17} and Nearest
 Sequence Memory \cite{McCallumNSM95}. Since these agents cannot incorporate knowledge engineering no rules were provided for ARO \textit{a priori}. Since we would expect that being provided expert rules would improve performance, this data can be seen as a worst-case outcome for ARO.
 
-There were a few modifications to the implementation of ARO from the specification to improve memory usage and run time. First, we discovered that there was no need to record a rule if a prefix of the cause sequence was unique. If the prefix occurs again, we may look back through memory to create the rule on the fly. This modification does not effect the behavior of ARO. Second, we cache the result of \scshape GetEV \normalfont and \scshape GetBestMove\normalfont after every goal, which dramatically improves computation time. This technically deviates from the specification because the value of \scshape GetHeuristic \normalfont is saved and not recomputed. Since $1/p$ trends downward as the agent learns more, this means that the agent undervalues explores compared to the specification. We found the overall effect on the agent to be small.
+There were a few minor modifications to the implementation of ARO from
+the above specification to improve memory usage and run time. First,
+there is no need to record a rule if a prefix of the cause sequence is
+unique. If the prefix occurs again, we may look back through history
+to create the rule on the fly. This modification does not affect the
+behavior of ARO. Second, we cache the result of \scshape
+GetEV \normalfont and \scshape GetBestMove \normalfont after every
+goal, which dramatically improves computation time. This technically
+deviates from the specification because the value of \scshape
+GetHeuristic \normalfont is saved and not recomputed. Since $1/p$
+trends downward as the agent learns more, this means that the agent
+undervalues explores compared to the specification. We found the
+overall effect on the agent to be small.
 
-Figure \ref{fig4} below shows the performance of all three agents in
-the Blind FSM environment.  Figure \ref{fig5} shows the results for the OSFSM environment.  These results are shown for a FSM with
-50 states and a three-letter alphabet (three possible actions per
-state).  The ordinal measures successive trips to the goal.  The
-abscissa measures the number of actions required to reach the goal on
-that trip.
+Figure \ref{fig4} shows the performance of all three agents in the
+Blind FSM environment.  Figure \ref{fig5} shows the results for the
+OSFSM environment.  These results are shown for a FSM with 50 states
+and a three-letter alphabet (three possible actions per state).  The
+abscissa measures successive trips to the goal.  The ordinate measures
+the number of actions required to reach the goal on that trip.
 
 \begin{figure}[t]
   \centering
@@ -631,15 +684,17 @@ that trip.
 \end{figure}
 
 Predictably, the number of steps to reach the goal declines
-exponential on successive trips the goal indicating that the agent is
-learning to improve its behavior.  This is true for all three
-algorithms. MaRz learns faster than NSM for the first few goals but converges at a much less efficient policy.
-ARO learns significantly faster than NSM and converges at a policy with nearly identical performance to NSM.
+exponentially on successive trips the goal, indicating that the agent
+is learning to improve its behavior.  This is true for all three
+algorithms. MaRz learns faster than NSM for the first few goals but
+converges at a much less efficient policy.  ARO learns significantly
+faster than NSM and converges at a policy with nearly identical
+performance to NSM.
 
-As shown, ARO is able to learn near optimal behavior much more rapidly
-than the other algorithms.  These results were consistent across a
-variety of different machines ranging from 10 to 90 states and
-alphabets of 2 to 9 letters. (Note: some data for NSM was still being
+ARO is able to learn near optimal behavior much more rapidly than the
+other algorithms.  These results were consistent across a variety of
+different machines ranging from 10 to 90 states and alphabets of 2 to
+9 letters. (Note to reviewer: some data for NSM was still being
 gathered at the time of paper submission.)
 
 \section{Future Work}
@@ -680,9 +735,9 @@ properties:
 \item continuously valued sensors
 \end{itemize}
 
-ARO's applicability extends beyond knowledge integration.  As an
-online algorithm, ARO can take advantage of knowledge immediately and
-therefore could be step towards ways in which humans and artificially
+ARO's potential extends beyond knowledge integration.  As an online
+algorithm, ARO can take advantage of knowledge immediately and
+therefore could be a step towards ways in which humans and artificially
 intelligent agents work collaboratively on a given task in real time.
 
 In addition, the development of ARO builds upon previous research to
