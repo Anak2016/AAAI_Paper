@@ -462,7 +462,7 @@ the \scshape GetHeuristic \normalfont function will be defined later in the pape
 		\For{$a$ in $\alpha$}
 			\State $Sum = 0$
 			\State Let $next = (o, a)$ be a new episode.
-			\State Let $nextSeq$ be $episodes$ appended by $next
+			\State Let $nextSeq$ be $episodes$ appended by $next$
 			\State $nextRuleSet =$ \Call{GetRuleSet}{$nextSeq$}
 			\If{$nextRuleSet$ is empty} \hspace{35pt} // base case
 				\State $Sum = $ \Call{GetHeuristic}{~} \label{line:heuristic}
