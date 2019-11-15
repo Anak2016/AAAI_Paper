@@ -375,7 +375,7 @@ The three examples for rules given in the background section may now be formally
 As we can see from the final example, it is often useful to consider
 the set of all rules with the same cause sequence. This lets us
 consider all possible outcomes from taking a particular action. We
-call such a set of rules a \textit{rule group}.
+call such a set of rules a \textit{rule set}.
 
 We used a tree structure to store rules, but this choice does not
 effect functionality in contrast to similar algorithms that use a
@@ -383,8 +383,8 @@ tree-based data structure \cite{McCallumUSM95,Shani2005}. So rather
 than explain this tree, we merely define the function \scshape
 GetRule \normalfont that takes as inputs both a cause sequence and an
 effect then produces as an output the corresponding rule. We also
-define the function \scshape GetRuleGroup \normalfont that takes a
-cause sequence as an input and produces the corresponding rule group
+define the function \scshape GetRuleSet \normalfont that takes a
+cause sequence as an input and produces the corresponding rule set
 as an output.
 
 Since the agent does not have access to the underlying FSM, it cannot
@@ -420,11 +420,11 @@ Given a sequence of previous episodes that have occurred and an observation, we 
 			\State $Sum = 0$
 			\State Let $next = (o, a)$ be a new episode.
 			\State Let $nextSeq$ be $episodes$ appended by $next$
-			\State $nextGroup =$ \Call{GetRuleGroup}{$nextSeq$} % Note: This looks awful because LaTeX spreads out spacing. This will need the full page to loook correct
-			\If{$nextGroup$ is empty}
+			\State $nextRuleSet =$ \Call{GetRuleSet}{$nextSeq$} % Note: This looks awful because LaTeX spreads out spacing. This will need the full page to loook correct
+			\If{$nextRuleSet$ is empty}
 				\State $Sum = $ \Call{GetHeuristic}{~} \label{line:heuristic}
 			\EndIf
-			\For{$rule$ in $nextGroup$}
+			\For{$rule$ in $nextRuleSet$}
 				\State Let $e$ be the effect of $rule$.
 				\State Let $p$ be the probability of $rule$.
 				\If{$e = G$}
@@ -465,7 +465,7 @@ next two sections.
 %Let us first deal with the case where we have no rules in a rule group and we must find the expected value. This occurs if the agent has never observed the sequence of episodes corresponding to the rule group. Let $e = (o, a)$ be the last episode in the rule group cause sequence and $seq$ be the rest of the sequence. This situation is equivalently described as follows: the agent has never recorded episodes in the sequence $seq$, then observed $o$ and performed action $a$. Thus, taking action $a$ can be considered an "exploration" by the agent. We therefore need to decide the value of exploring in this environment, which is clearly a bandit problem. Specifically, this is a contextual bandit problem with $seq$ and $o$ forming the context and the arms being the actions in $\alpha$. However, in this context
 
 Let us first deal with the case where we must calculate an expected
-value for a rule group containing no rules. This can be equivalently
+value for a rule set containing no rules. This can be equivalently
 stated as follows: ARO has never seen the episode sequence $episodes$
 occur, then observed the observation $o$, and then performed some
 action $a$. Furthermore, no expert has provided knowledge on what they
@@ -486,7 +486,7 @@ work.'' \cite{McCallumUSM95}
 To compare the value of this exploration to other actions we have
 taken, we must decide the value of exploring in the units of expected
 value.  It is possible to find an estimate of the expected value by
-using the rule group corresponding to removing the first episode from
+using the rule set corresponding to removing the first episode from
 $episodes$. However, repeating this process can lead to infinite depth
 recursion. Rather than creating a suitable base case to make the
 recursion finite, we instead attempt to estimate the value that this
