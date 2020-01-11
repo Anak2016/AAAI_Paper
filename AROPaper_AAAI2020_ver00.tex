@@ -232,15 +232,15 @@ Memory (USM) and Noisy Utile Suffix Memory (NUSM) have been shown to
 be effective in these kinds of
 environments \cite{McCallumNSM95,McCallumUSM95,Shani2005}. These
 operate by looking for the closest past experiences to the most recent
-events in memory, which are likely when the agent was in a similar
-state, then determining which action taken in the past was most
-effective for reaching the goal.  Sometimes, the agent will randomly
-explore instead.
+events in memory. Then, these algorithms determine which action taken in 
+these past experiences was most effective for reaching the goal.  Sometimes, 
+the agent will randomly explore instead.
 
 Similarly to MaRz, these algorithms do not have a clear path to
-integrating expert knowledge. Each algorithm the ``facts" it will use
-for deciding which actions to take in the future to be in the format
-of chains of memories.  A more convenient algorithm would expect
+integrating expert knowledge. Since all ``knowledge" these algorithms learn
+is stored as chains of memories, it appears expert knowledge would have
+to be stored in a similar fashion in order for these algorithms to use it.
+A more convenient algorithm would expect
 expert knowledge to be in the format of a set of declarative facts.
 
 In contrast to these other algorithms, ARO generates and employs facts
@@ -435,6 +435,21 @@ of this estimate if it is provided to the agent. \scshape
 GetRule \normalfont does not distinguish between the source of the
 rule when providing it to the agent.
 
+As noted by a reviewer of this paper, it may be necessary to treat expert
+knowledge as only likely to be correct rather than certain to be correct. 
+To accomplish this, expert knowledge can be associated with a weight, with 
+higher weights indicating a higher confidence in the correctness of the rule. 
+In this case, ARO can treat these weights like the frequency of the observation 
+of this pattern. These frequencies can be added to the total frequencies of ARO's 
+observations in order to compute the probability. For instance, say the rule 
+$0b \rightarrow 0: 100\%$ is provided with a weight of $8$, but ARO observes the 
+pattern $0a, 1$ twice. Then ARO would use the rules $0b \rightarrow 0: 80\%$ and 
+$0b \rightarrow 1: 20\%$. Thus, over time expert rules would either be confirmed by 
+ARO's observations or replaced with more accurate rules. In a sense, the weight 
+serves as a kind of Bayesian prior of the actual probability of the effect 
+following the cause. The implications of such a system are not fully 
+explored here.
+
 
 %There are multiple rules with the same cause sequence. For instance, both $1a \rightarrow 0: 3$ and $1a \rightarrow G: 2$ may be rules. By comparing all rules with the same cause sequence, the agent can compute the probability that any particular effect will occur. We will call this set of rules a ``rule group." We define the function called \scshape GetRuleGroup\normalfont(episodes), which takes an array of episodes and returns the corresponding rule group.
 
@@ -583,7 +598,8 @@ episode sequence may be too common for the agent to know where it is
 in the machine or to determine if it is going in a loop, which could
 cause undesirable behavior such as infinite looping. To resolve this
 dilemma, ARO uses a greedy strategy of taking the episode sequence
-that produces the smallest expected value. Hence, if the agent has
+that produces the smallest expected value and the smallest such sequence
+if there are multiple options. Hence, if the agent has
 knowledge of a fast path to the goal, it will take it regardless of
 sequence length.
 
@@ -611,7 +627,8 @@ move at timestep $t$, then $nextSeq$ must be used to find the best
 move at timestep $t+1$. There are two exceptions to this rule:
 \begin{enumerate}
 	\item The agent observes a goal. Because the agent is moved randomly upon reaching the goal state, there is no information to be gained by using a sequence with a goal observation.
-	\item $nextSeq$ is unique. This implies the agent is in a novel scenario and the current sequence can provide no data to guide the agent.
+	%\item $nextSeq$ is unique. This implies the agent is in a novel scenario and the current sequence can provide no data to guide the agent. TODO: Update to say that no rules apply, b/c expert knowledge could imply rules in this situation. Also need to update the policy function below.
+	\item No rules apply to the current situation using $nextSeq$. This implies the agent is in a novel scenario and the current sequence can provide no data to guide the agent.
 \end{enumerate}
 
 Using these procedures, we can now fully define the policy of ARO. We
@@ -628,9 +645,9 @@ described in the following algorithm.
 		\EndIf
 		\State Let $e$ be the last episode.
 		\State Let $seq$ be $prevSeq$ appended by $e$.
-		\State Let $f$ be the frequency of $seq$ in episode history
-		\If{$f = 1$ or $seq$ contains the episode $G$}
+		\If{There are no rules with cause sequence $seq, o*$ or $seq$ contains the episode $G$}
 			\State Set $prevSeq$ to the sequence of recent episodes such that \Call{EV}{$prevSeq$, $o$} is minimized.
+			\State If there is a tie, use the shortest possible sequence.
 		\Else
 			\State $prevSeq = seq$
 		\EndIf
@@ -640,6 +657,45 @@ described in the following algorithm.
 \end{algorithmic}
 
 %Often, it is necessary for the agent to look ahead more than one action. For example, if a rule group indicates to the agent that there is a $35\%$ chance that making an $a$ will lead to an odd state, it may be helpful to see what the chances are for reaching the goal by making an $a$ or $b$ from such an odd state. To allow for such operations, rules are stored in a tree-like data structure defined as follows: a node of the tree consists of an observation, a frequency, and a mapping from $\alpha$ to an array of nodes, where no pair of nodes in an array use the same observation. The root of this tree is an array of tree nodes.
+
+\section{Example}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.6\columnwidth]{ExampleFSM} % Reduce the figure size so that it is slightly narrower than the column. Don't use precise values for figure width.This setup will avoid overfull boxes. 
+	\caption{An example FSM}
+	\label{fig1}
+\end{figure}
+
+
+%  Here is the transition table for the FSM in the figure
+%          a  b
+%       1  2  1
+%       2  1  G
+%       3  2  3
+%       4  4  5
+%       5  6  5
+%       6  4  G
+
+Let us use the FSM in Figure \ref{fig1} as an example for ARO to navigate. Furthermore, suppose that the environment will provide an odd state sensor and that the following two rules are provided by experts on this FSM: $$ \rightarrow 1: 3/7; 1a, 0b \rightarrow G: 100\%$$
+Note that the first rule says odd states happen only $3/7$ths of the time. This is because the goal state should occur $1/7$th of the time and the goal is neither even nor odd. Finally, suppose ARO randomly begins in state $6$.
+
+Being in an even state, ARO will be provided an observation of $0$. Immediately, ARO will form the new rule $\rightarrow 0: 4/7$ because ARO has never seen an even state before. This probability is chosen because ARO has seen an even state $100\%$ of the time it was not in an odd state, and based on the rule $\rightarrow 1: 3/7$, ARO should not be in an odd state $4/7$ths of the time. At this point, ARO has seen $1$ state and $0$ goals, so $p = \frac{1}{2}$ and our heuristic is $2$ (recall that we add one to the number of goals when computing $p$). ARO will compute an expected value of $2$ for moves $a$ and $b$ since it has no rules to predict the outcome of either action. In case of a tie, ARO will arbitrarily pick the earlier move in the alphabet, in this case $a$, and transition to state $4$.
+
+ARO again receives an observation of $0$. ARO will form the new rule $0a \rightarrow 0: 100\%$ because of this observation. Since the last episode was $0a$, ARO updates $prevSeq$ to $[0a]$. However, since no rules apply with this sequence, ARO will check all valid sequences to find the best move. Those sequences are $[]$ and $[0a]$. Also note that the heuristic has updated to $3$. For the former sequence, the best move found will be $b$ with an expected value of $3$. For the latter sequence, the best move found will be $a$ with an expected value of $3$ (again for this case, both $a$ and $b$ were tied so the choice of $a$ is arbitrary). In this kind of tie, ARO will prefer the move recommended by the shorter sequence, so it will perform action $b$. ARO then transitions to state $5$.
+
+ARO will receive an observation of $1$, creating the new rules $0b \rightarrow 1: 100\%$ and $0a, 0b \rightarrow 1: 100\%$. Also, $prevSeq$ is set to $[0b]$. Again, no rules apply so all sequences are checked. This operation is common when ARO begins to explore but becomes rare once ARO has gathered data. Since the agent has never seen an odd state before, the only helpful rule is the expert rule $1a, 0b \rightarrow G: 100\%$. It may appear that the agent can use this rule, but this is not the case. The agent does not know how likely it is to reach an even state by making the move $a$; in fact, the agent does not even know if this outcome is possible. As such, it will defer to the heuristic for computing the expected value of $a$ and not use this rule at all. As a consequence of this fact, simpler rules are vastly more important to the agent than complex ones because the former are needed in order to capitalize on the latter. Luckily, those rules are also the easiest for the agent to accurately learn. The best move found will be $a$ as proposed by the empty sequence, so the agent will move into state $6$.
+
+At this point, you may notice that ARO is performing a kind of breadth first search. With very little knowledge  of how the goal is reached, this is the best strategy ARO can perform. However, once the goal has been reached, ARO will begin biasing its actions toward moves and sequences of moves that are more likely to reach the goal. 
+
+Next, ARO receives an observation of $0$ and creates the rules $1a \rightarrow 0: 100\%$, $0b, 1a \rightarrow 0: 100\%$, and $0a, 0b, 1a \rightarrow 0: 100\%$. These may seem redundant, but they are all stored independently so that each of their probabilities may change independently in the future. With $prevSeq$ set to $[1a]$, the agent may now capitalize on its expert knowledge. Using $prevSeq$, the agent finds $a$ is the best move with an expected value of $1$ because of the rule $1a, 0b \rightarrow 1: 100\%$. This beats move $b$, with an expected value the same as the heuristic at $5$. ARO then takes move $b$ to reach the goal.
+
+Upon reaching the goal, ARO will update and create several rules. A full list of rules that ARO knows is presented below, with rules of equal depth on the same line:
+$$\rightarrow 1: 3/7; \rightarrow 0: 3/7; \rightarrow G: 1/7$$
+$$0a \rightarrow 0: 100\%; 0b \rightarrow 1: 50\%; 0b \rightarrow G: 50\%; 1a \rightarrow 0: 100\%$$
+$$0a, 0b \rightarrow 1: 100\%; 0b, 1a \rightarrow 0: 100\%; 1a, 0b \rightarrow G: 100\%$$
+$$0a, 0b, 1a \rightarrow 0: 100\%; 0b, 1a, 0b \rightarrow G: 100\%$$
+Even though the agent saw 3 even states and only one odd state, the expert knowledge provided has allowed the 0-deep rules to converge on the correct probabilities. The agent has very little data, so some of the rules it created are incorrect. For instance, $0a \rightarrow 0$ should not have a $100\%$ probability due to state $2$. But the agent has also correctly discovered patterns such as $1a, 0b \rightarrow G: 100\%$ which it will be able to immediately use to help navigate the FSM.
 
 
 \section{Results}
