@@ -603,6 +603,8 @@ if there are multiple options. Hence, if the agent has
 knowledge of a fast path to the goal, it will take it regardless of
 sequence length.
 
+% TODO: Fix GetBestMove here
+
 This alone, however, is not sufficient to prevent loops. At timestep
 $t$, say the sequence $seq$ has the property \scshape
 EV\normalfont($seq$) $ = x$, where $x$ is the minimal expected
@@ -651,7 +653,7 @@ described in the following algorithm.
 		\Else
 			\State $prevSeq = seq$
 		\EndIf
-        \State \Return \Call{GetBestMove}{$prevSeq$}
+        \State \Return \Call{GetBestMove}{$prevSeq$, $o$}
 	\EndFunction
 	
 \end{algorithmic}
@@ -680,22 +682,29 @@ described in the following algorithm.
 Let us use the FSM in Figure \ref{fig1} as an example for ARO to navigate. Furthermore, suppose that the environment will provide an odd state sensor and that the following two rules are provided by experts on this FSM: $$ \rightarrow 1: 3/7; 1a, 0b \rightarrow G: 100\%$$
 Note that the first rule says odd states happen only $3/7$ths of the time. This is because the goal state should occur $1/7$th of the time and the goal is neither even nor odd. Finally, suppose ARO randomly begins in state $6$.
 
-Being in an even state, ARO will be provided an observation of $0$. Immediately, ARO will form the new rule $\rightarrow 0: 4/7$ because ARO has never seen an even state before. This probability is chosen because ARO has seen an even state $100\%$ of the time it was not in an odd state, and based on the rule $\rightarrow 1: 3/7$, ARO should not be in an odd state $4/7$ths of the time. At this point, ARO has seen $1$ state and $0$ goals, so $p = \frac{1}{2}$ and our heuristic is $2$ (recall that we add one to the number of goals when computing $p$). ARO will compute an expected value of $2$ for moves $a$ and $b$ since it has no rules to predict the outcome of either action. In case of a tie, ARO will arbitrarily pick the earlier move in the alphabet, in this case $a$, and transition to state $4$.
+Being in an even state, ARO will be provided an observation of $0$. Immediately, ARO will form the new rule $\rightarrow 0: 4/7$ because ARO has never seen an even state before. This probability is chosen because ARO has seen an even state $100\%$ of the time it was not in an odd state, and based on the rule $\rightarrow 1: 3/7$, ARO should not be in an odd state $4/7$ths of the time. At this point, ARO has seen $1$ state and $0$ goals, so $p = \frac{1}{2}$ and our heuristic is $2$ (recall that we add one to the number of goals when computing $p$). ARO will compute an expected value of $2$ for moves $a$ and $b$ since it has no rules to predict the outcome of either action. In case of a tie, ARO will arbitrarily pick the earlier move in the alphabet, in this case $a$. Before it returns, ARO will also update $prevSeq$ to $[0a]$. ARO will then transition to state $4$. 
 
-ARO again receives an observation of $0$. ARO will form the new rule $0a \rightarrow 0: 100\%$ because of this observation. Since the last episode was $0a$, ARO updates $prevSeq$ to $[0a]$. However, since no rules apply with this sequence, ARO will check all valid sequences to find the best move. Those sequences are $[]$ and $[0a]$. Also note that the heuristic has updated to $3$. For the former sequence, the best move found will be $b$ with an expected value of $3$. For the latter sequence, the best move found will be $a$ with an expected value of $3$ (again for this case, both $a$ and $b$ were tied so the choice of $a$ is arbitrary). In this kind of tie, ARO will prefer the move recommended by the shorter sequence, so it will perform action $b$. ARO then transitions to state $5$.
+ARO again receives an observation of $0$. ARO will form the new rule $0a \rightarrow 0: 100\%$ because of this observation. The heuristic will also update to $3$. ARO will look for all rule sets with cause sequence $0a,0*$ because $[0a]$ is $prevSeq$. However, since no rules apply with this sequence, ARO will check all possible previous sequences to find rule sets. Those sequences are $[]$ and $[0a]$. 
 
-ARO will receive an observation of $1$, creating the new rules $0b \rightarrow 1: 100\%$ and $0a, 0b \rightarrow 1: 100\%$. Also, $prevSeq$ is set to $[0b]$. Again, no rules apply so all sequences are checked. This operation is common when ARO begins to explore but becomes rare once ARO has gathered data. Since the agent has never seen an odd state before, the only helpful rule is the expert rule $1a, 0b \rightarrow G: 100\%$. It may appear that the agent can use this rule, but this is not the case. The agent does not know how likely it is to reach an even state by making the move $a$; in fact, the agent does not even know if this outcome is possible. As such, it will defer to the heuristic for computing the expected value of $a$ and not use this rule at all. As a consequence of this fact, simpler rules are vastly more important to the agent than complex ones because the former are needed in order to capitalize on the latter. Luckily, those rules are also the easiest for the agent to accurately learn. The best move found will be $a$ as proposed by the empty sequence, so the agent will move into state $6$.
+First, ARO calls \scshape EV($[]$, $0$)\normalfont. The move $b$ has no rule set apply and thus has an expected value of $3$, the heuristic. The move $a$ will find the rule set consisting solely of the rule $0a \rightarrow 0: 100\%$, which will cause a recursive call \scshape EV($[0a]$, $0$)\normalfont. In this call, ARO will find no rule sets that apply and thus return the heuristic of $3$ with $BestMove$ set arbitrarily to $a$. On return, ARO adds $1$ to the return value to account for the step of reaching that state and multiplies by $p = 100\%$, so $a$ has an overall expected value of $4$. Since \scshape EV\normalfont returns the minimum value, it will return $3$ with $BestMove$ set to $b$. 
+
+Next, from the \scshape Policy \normalfont function, ARO will try the other sequence by calling \scshape EV($[0a]$, $0$)\normalfont. Note that we already evaluated the result of this call in the last paragraph - returning $3$ with $BestMove$ set to $a$. This overlap is very common. If \scshape EV\normalfont calls are cached, it is typically only necessary to call \scshape EV\normalfont a handful of times in order to generate all values needed to select an action. We have also tied for best value since both calls returned $3$, so we select the move generated by the shortest sequence, which in this case is the move $b$. Finally, $prevSeq$ is set to $[0b]$ and ARO transitions to state $5$.
+
+
+%Those sequences are $[]$ and $[0a]$. For the later sequence, no rule set is found, so the heuristic of $3$ is returned for an arbitrary best move of $a$. For the former sequence, a rule set consisting solely of the new rule $0a \rightarrow 0: 100\%$ is found. However, following this rule recursively in the expected value calculation leads to the same calculation as the expected value of the later sequence, so the expected value of taking move $a$ is $4$. Note that is overlap is common - in our implementation the result is often cached. Comparatively, there is no rule set from making the move $b$, so the heuristic of $3$ is used. Since this is better, $b$ is found to be the best move. In this kind of tie, ARO will prefer the move recommended by the shorter sequence, so it will perform action $b$. ARO then transitions to state $5$.
+
+ARO will receive an observation of $1$, creating the new rules $0b \rightarrow 1: 100\%$ and $0a, 0b \rightarrow 1: 100\%$. Again, no rules apply so all sequences are checked. This operation is common when ARO begins to explore but becomes rare once ARO has gathered data. Since the agent has never seen an odd state before, the only helpful rule is the expert rule $1a, 0b \rightarrow G: 100\%$. It may appear that the agent can use this rule, but this is not the case. The agent does not know how likely it is to reach an even state by making the move $a$; in fact, the agent does not even know if this outcome is possible. As such, it will defer to the heuristic for computing the expected value of $a$ and not use this rule at all. As a consequence of this fact, simpler rules are vastly more important to the agent than complex ones because the former are needed in order to capitalize on the latter. Luckily, those rules are also the easiest for the agent to accurately learn. The best move found will be $a$ as proposed by the empty sequence, so the agent will move into state $6$ with $prevSeq$ set to $[1a]$.
 
 At this point, you may notice that ARO is performing a kind of breadth first search. With very little knowledge  of how the goal is reached, this is the best strategy ARO can perform. However, once the goal has been reached, ARO will begin biasing its actions toward moves and sequences of moves that are more likely to reach the goal. 
 
-Next, ARO receives an observation of $0$ and creates the rules $1a \rightarrow 0: 100\%$, $0b, 1a \rightarrow 0: 100\%$, and $0a, 0b, 1a \rightarrow 0: 100\%$. These may seem redundant, but they are all stored independently so that each of their probabilities may change independently in the future. With $prevSeq$ set to $[1a]$, the agent may now capitalize on its expert knowledge. Using $prevSeq$, the agent finds $a$ is the best move with an expected value of $1$ because of the rule $1a, 0b \rightarrow 1: 100\%$. This beats move $b$, with an expected value the same as the heuristic at $5$. ARO then takes move $b$ to reach the goal.
+Next, ARO receives an observation of $0$ and creates the rules $1a \rightarrow 0: 100\%$, $0b, 1a \rightarrow 0: 100\%$, and $0a, 0b, 1a \rightarrow 0: 100\%$. These may seem redundant, but they are all stored independently so that each of their probabilities may change independently in the future. The agent may now capitalize on its expert knowledge. Using $prevSeq$, the agent finds $a$ is the best move with an expected value of $1$ because of the rule $1a, 0b \rightarrow G: 100\%$. This beats move $b$, with an expected value the same as the heuristic at $5$. ARO then takes move $b$ to reach the goal.
 
 Upon reaching the goal, ARO will update and create several rules. A full list of rules that ARO knows is presented below, with rules of equal depth on the same line:
 $$\rightarrow 1: 3/7; \rightarrow 0: 3/7; \rightarrow G: 1/7$$
 $$0a \rightarrow 0: 100\%; 0b \rightarrow 1: 50\%; 0b \rightarrow G: 50\%; 1a \rightarrow 0: 100\%$$
 $$0a, 0b \rightarrow 1: 100\%; 0b, 1a \rightarrow 0: 100\%; 1a, 0b \rightarrow G: 100\%$$
 $$0a, 0b, 1a \rightarrow 0: 100\%; 0b, 1a, 0b \rightarrow G: 100\%$$
-Even though the agent saw 3 even states and only one odd state, the expert knowledge provided has allowed the 0-deep rules to converge on the correct probabilities. The agent has very little data, so some of the rules it created are incorrect. For instance, $0a \rightarrow 0$ should not have a $100\%$ probability due to state $2$. But the agent has also correctly discovered patterns such as $1a, 0b \rightarrow G: 100\%$ which it will be able to immediately use to help navigate the FSM.
+Even though the agent saw 3 even states and only one odd state, the expert knowledge provided has allowed the 0-deep rules to converge on the correct probabilities. The agent has very little data, so some of the rules it created are incorrect. For instance, $0a \rightarrow 0$ should not have a $100\%$ probability due to state $2$. But the agent has also correctly discovered patterns such as $0a, 0b \rightarrow 1: 100\%$ which it will be able to immediately use to help navigate the FSM.
 
 
 \section{Results}
@@ -750,8 +759,7 @@ performance to NSM.
 ARO is able to learn near optimal behavior much more rapidly than the
 other algorithms.  These results were consistent across a variety of
 different machines ranging from 10 to 90 states and alphabets of 2 to
-9 letters (not shown). (Note to reviewer: some data for NSM was still being
-gathered at the time of paper submission.)
+9 letters (not shown).
 
 \section{Future Work}
 
